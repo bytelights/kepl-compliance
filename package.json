@@ -1,0 +1,22 @@
+{
+  "name": "compliance-management-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-ready Compliance Management System monorepo",
+  "scripts": {
+    "dev": "pnpm --parallel --filter \"./apps/*\" dev",
+    "build": "pnpm --filter \"./apps/*\" build",
+    "backend:dev": "pnpm --filter backend-nest dev",
+    "frontend:dev": "pnpm --filter frontend-angular dev",
+    "db:migrate": "pnpm --filter backend-nest db:migrate",
+    "db:seed": "pnpm --filter backend-nest db:seed",
+    "db:studio": "pnpm --filter backend-nest db:studio"
+  },
+  "keywords": ["compliance", "management", "nestjs", "angular"],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}

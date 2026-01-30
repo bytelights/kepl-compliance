@@ -1,0 +1,165 @@
+.reports-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 32px;
+}
+
+.header h1 {
+  margin: 0 0 8px 0;
+  font-size: 32px;
+  font-weight: 500;
+  color: #1976d2;
+}
+
+.subtitle {
+  margin: 0;
+  color: #666;
+  font-size: 16px;
+}
+
+.filter-card {
+  margin-bottom: 32px;
+}
+
+mat-card-header mat-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-filter-form {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.date-filter-form mat-form-field {
+  flex: 1;
+  min-width: 200px;
+}
+
+.reports-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.report-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.report-card mat-card-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 24px;
+  margin: -16px -16px 16px -16px;
+  border-radius: 4px 4px 0 0;
+}
+
+.report-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  color: white;
+}
+
+.report-icon.department {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  border-radius: 50%;
+  padding: 8px;
+}
+
+.report-icon.overdue {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  border-radius: 50%;
+  padding: 8px;
+}
+
+.report-card h2 {
+  margin: 0 0 12px 0;
+  font-size: 20px;
+  font-weight: 500;
+  color: #333;
+}
+
+.report-card p {
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.features-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px 0;
+}
+
+.features-list li {
+  padding: 8px 0;
+  color: #555;
+  display: flex;
+  align-items: center;
+}
+
+.features-list li::before {
+  content: "✓";
+  color: #4caf50;
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+mat-card-actions {
+  padding: 16px;
+  margin-top: auto;
+}
+
+mat-card-actions button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.info-card {
+  background-color: #e3f2fd;
+  border-left: 4px solid #1976d2;
+}
+
+.info-content {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.info-content mat-icon {
+  color: #1976d2;
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
+}
+
+.info-content h3 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 500;
+  color: #333;
+}
+
+.info-content p {
+  margin: 0;
+  color: #666;
+  line-height: 1.6;
+}
+
+/* Loading state */
+button[disabled] {
+  opacity: 0.6;
+}

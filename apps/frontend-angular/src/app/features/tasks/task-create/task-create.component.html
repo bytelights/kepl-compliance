@@ -1,0 +1,247 @@
+<div class="task-create-container">
+  <div class="header">
+    <h1>Create Compliance Task</h1>
+    <p class="subtitle">Create a new compliance task manually</p>
+  </div>
+
+  <mat-card>
+    <mat-card-content>
+      <div *ngIf="loading" class="loading-container">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Loading form data...</p>
+      </div>
+
+      <form [formGroup]="taskForm" (ngSubmit)="onSubmit()" *ngIf="!loading">
+        
+        <!-- Master Template Selection (Optional) -->
+        <div class="section">
+          <h3>
+            <mat-icon aria-label="Template icon">description</mat-icon>
+            Template (Optional)
+          </h3>
+          <p class="helper-text">Select a master template to auto-fill task details, or leave blank to create from scratch</p>
+          
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Compliance Master Template</mat-label>
+            <mat-select 
+              formControlName="complianceMasterId"
+              (selectionChange)="onMasterSelected($event.value)"
+              aria-label="Select compliance master template"
+            >
+              <mat-option [value]="null">None (Create manually)</mat-option>
+              <mat-option *ngFor="let master of complianceMasters" [value]="master.id">
+                {{ master.name }}
+              </mat-option>
+            </mat-select>
+            <mat-hint>Optional: Select to auto-fill title and description</mat-hint>
+          </mat-form-field>
+        </div>
+
+        <!-- Basic Information -->
+        <div class="section">
+          <h3>
+            <mat-icon aria-label="Basic info icon">info</mat-icon>
+            Basic Information
+          </h3>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Compliance ID</mat-label>
+            <input 
+              matInput 
+              formControlName="complianceId" 
+              placeholder="e.g., GST-JAN-2026"
+              aria-label="Compliance ID input"
+            >
+            <mat-hint>Unique identifier for this task</mat-hint>
+            <mat-error *ngIf="taskForm.get('complianceId')?.hasError('required')">
+              Compliance ID is required
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Task Title</mat-label>
+            <input 
+              matInput 
+              formControlName="title" 
+              placeholder="e.g., Monthly GST Return Filing"
+              aria-label="Task title input"
+            >
+            <mat-error *ngIf="taskForm.get('title')?.hasError('required')">
+              Title is required
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Description</mat-label>
+            <textarea 
+              matInput 
+              formControlName="description" 
+              rows="3"
+              placeholder="Task description and requirements"
+              aria-label="Task description input"
+            ></textarea>
+          </mat-form-field>
+        </div>
+
+        <!-- Assignment -->
+        <div class="section">
+          <h3>
+            <mat-icon aria-label="Assignment icon">assignment_ind</mat-icon>
+            Assignment
+          </h3>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Entity</mat-label>
+              <mat-select formControlName="entityId" aria-label="Select entity">
+                <mat-option *ngFor="let entity of entities" [value]="entity.id">
+                  {{ entity.name }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="taskForm.get('entityId')?.hasError('required')">
+                Entity is required
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Department</mat-label>
+              <mat-select formControlName="departmentId" aria-label="Select department">
+                <mat-option *ngFor="let dept of departments" [value]="dept.id">
+                  {{ dept.name }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="taskForm.get('departmentId')?.hasError('required')">
+                Department is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Law/Regulation</mat-label>
+            <mat-select formControlName="lawId" aria-label="Select law">
+              <mat-option *ngFor="let law of laws" [value]="law.id">
+                {{ law.name }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="taskForm.get('lawId')?.hasError('required')">
+              Law is required
+            </mat-error>
+          </mat-form-field>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Task Owner</mat-label>
+              <mat-select formControlName="ownerId" aria-label="Select task owner">
+                <mat-option *ngFor="let user of users" [value]="user.id">
+                  {{ user.name }} ({{ user.email }})
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="taskForm.get('ownerId')?.hasError('required')">
+                Owner is required
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Reviewer</mat-label>
+              <mat-select formControlName="reviewerId" aria-label="Select reviewer">
+                <mat-option *ngFor="let user of users" [value]="user.id">
+                  {{ user.name }} ({{ user.email }})
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="taskForm.get('reviewerId')?.hasError('required')">
+                Reviewer is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Task Properties -->
+        <div class="section">
+          <h3>
+            <mat-icon aria-label="Properties icon">settings</mat-icon>
+            Task Properties
+          </h3>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Frequency</mat-label>
+              <mat-select formControlName="frequency" aria-label="Select frequency">
+                <mat-option [value]="null">Not specified</mat-option>
+                <mat-option *ngFor="let freq of frequencies" [value]="freq.value">
+                  {{ freq.label }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Impact Level</mat-label>
+              <mat-select formControlName="impact" aria-label="Select impact level">
+                <mat-option [value]="null">Not specified</mat-option>
+                <mat-option *ngFor="let imp of impacts" [value]="imp.value">
+                  {{ imp.label }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Due Date</mat-label>
+              <input
+                matInput
+                [matDatepicker]="duePicker"
+                formControlName="dueDate"
+                placeholder="Select due date"
+                aria-label="Due date input"
+              >
+              <mat-datepicker-toggle matSuffix [for]="duePicker" aria-label="Open due date picker"></mat-datepicker-toggle>
+              <mat-datepicker #duePicker></mat-datepicker>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions">
+          <button
+            type="submit"
+            mat-raised-button
+            color="primary"
+            [disabled]="submitting || taskForm.invalid"
+            aria-label="Create task button"
+          >
+            <mat-icon aria-hidden="true">save</mat-icon>
+            <span *ngIf="!submitting">Create Task</span>
+            <span *ngIf="submitting">Creating...</span>
+          </button>
+
+          <button
+            type="button"
+            mat-button
+            (click)="cancel()"
+            [disabled]="submitting"
+            aria-label="Cancel button"
+          >
+            <mat-icon aria-hidden="true">cancel</mat-icon>
+            Cancel
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Help Card -->
+  <mat-card class="help-card">
+    <mat-card-content>
+      <div class="help-content">
+        <mat-icon aria-label="Help icon">help_outline</mat-icon>
+        <div>
+          <h3>How to Create Tasks</h3>
+          <ul>
+            <li><strong>With Master Template:</strong> Select a template to auto-fill task details. Good for recurring compliance tasks.</li>
+            <li><strong>Without Master:</strong> Leave template blank and fill all fields manually. Good for one-time or custom tasks.</li>
+            <li><strong>Compliance ID:</strong> Must be unique per entity. Use format like "GST-JAN-2026" or "AUDIT-2026".</li>
+            <li><strong>Required Fields:</strong> Compliance ID, Title, Entity, Department, Law, Owner, Reviewer.</li>
+          </ul>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

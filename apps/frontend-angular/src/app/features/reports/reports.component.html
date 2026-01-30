@@ -1,0 +1,169 @@
+<div class="reports-container">
+  <div class="header">
+    <h1>Compliance Reports</h1>
+    <p class="subtitle">Export compliance data and analytics</p>
+  </div>
+
+  <!-- Date Filter Card -->
+  <mat-card class="filter-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon aria-label="Date filter icon">date_range</mat-icon>
+        Date Range Filter (for Compliance Summary)
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="dateFilterForm" class="date-filter-form">
+        <mat-form-field appearance="outline">
+          <mat-label>Start Date</mat-label>
+          <input
+            matInput
+            [matDatepicker]="startPicker"
+            formControlName="startDate"
+            placeholder="Select start date"
+            aria-label="Start date input"
+          >
+          <mat-datepicker-toggle matSuffix [for]="startPicker" aria-label="Open start date picker"></mat-datepicker-toggle>
+          <mat-datepicker #startPicker></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>End Date</mat-label>
+          <input
+            matInput
+            [matDatepicker]="endPicker"
+            formControlName="endDate"
+            placeholder="Select end date"
+            aria-label="End date input"
+          >
+          <mat-datepicker-toggle matSuffix [for]="endPicker" aria-label="Open end date picker"></mat-datepicker-toggle>
+          <mat-datepicker #endPicker></mat-datepicker>
+        </mat-form-field>
+
+        <button
+          mat-button
+          (click)="clearDateFilter()"
+          aria-label="Clear date filter"
+        >
+          <mat-icon aria-hidden="true">clear</mat-icon>
+          Clear
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Report Cards -->
+  <div class="reports-grid">
+    <!-- Compliance Summary Report -->
+    <mat-card class="report-card">
+      <mat-card-header>
+        <mat-icon class="report-icon" aria-label="Compliance icon">assignment</mat-icon>
+      </mat-card-header>
+      <mat-card-content>
+        <h2>Compliance Summary Report</h2>
+        <p>
+          Comprehensive report of all compliance tasks including status, deadlines, owners, and completion dates.
+        </p>
+        <ul class="features-list">
+          <li>All task details</li>
+          <li>Entity and department breakdown</li>
+          <li>Owner and reviewer information</li>
+          <li>Date range filtering</li>
+        </ul>
+      </mat-card-content>
+      <mat-card-actions>
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="exportComplianceSummary()"
+          [disabled]="exporting.compliance"
+          aria-label="Export compliance summary report"
+        >
+          <mat-icon aria-hidden="true">file_download</mat-icon>
+          <span *ngIf="!exporting.compliance">Export CSV</span>
+          <span *ngIf="exporting.compliance">Exporting...</span>
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
+    <!-- Department Report -->
+    <mat-card class="report-card">
+      <mat-card-header>
+        <mat-icon class="report-icon department" aria-label="Department icon">corporate_fare</mat-icon>
+      </mat-card-header>
+      <mat-card-content>
+        <h2>Department-Wise Report</h2>
+        <p>
+          Statistical analysis of compliance performance by department with completion rates and overdue counts.
+        </p>
+        <ul class="features-list">
+          <li>Total tasks per department</li>
+          <li>Completed vs pending breakdown</li>
+          <li>Overdue task counts</li>
+          <li>Compliance rate percentage</li>
+        </ul>
+      </mat-card-content>
+      <mat-card-actions>
+        <button
+          mat-raised-button
+          color="accent"
+          (click)="exportDepartmentReport()"
+          [disabled]="exporting.department"
+          aria-label="Export department report"
+        >
+          <mat-icon aria-hidden="true">file_download</mat-icon>
+          <span *ngIf="!exporting.department">Export CSV</span>
+          <span *ngIf="exporting.department">Exporting...</span>
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
+    <!-- Overdue Tasks Report -->
+    <mat-card class="report-card">
+      <mat-card-header>
+        <mat-icon class="report-icon overdue" aria-label="Overdue icon">warning</mat-icon>
+      </mat-card-header>
+      <mat-card-content>
+        <h2>Overdue Tasks Report</h2>
+        <p>
+          Detailed list of all overdue pending tasks with days overdue, impact level, and responsible owners.
+        </p>
+        <ul class="features-list">
+          <li>All pending overdue tasks</li>
+          <li>Days overdue calculation</li>
+          <li>Impact level assessment</li>
+          <li>Owner contact information</li>
+        </ul>
+      </mat-card-content>
+      <mat-card-actions>
+        <button
+          mat-raised-button
+          color="warn"
+          (click)="exportOverdueTasks()"
+          [disabled]="exporting.overdue"
+          aria-label="Export overdue tasks report"
+        >
+          <mat-icon aria-hidden="true">file_download</mat-icon>
+          <span *ngIf="!exporting.overdue">Export CSV</span>
+          <span *ngIf="exporting.overdue">Exporting...</span>
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+  <!-- Info Card -->
+  <mat-card class="info-card">
+    <mat-card-content>
+      <div class="info-content">
+        <mat-icon aria-label="Information icon">info</mat-icon>
+        <div>
+          <h3>Report Information</h3>
+          <p>
+            All reports are exported in CSV format and can be opened in Excel, Google Sheets, or any spreadsheet application.
+            Reports include all data visible to your role (Admin/Reviewer).
+          </p>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

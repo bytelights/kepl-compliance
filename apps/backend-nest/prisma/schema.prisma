@@ -1,0 +1,373 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// CORE TABLES
+// ============================================================================
+
+model Workspace {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  users              User[]
+  entities           Entity[]
+  departments        Department[]
+  laws               Law[]
+  compliancesMaster  ComplianceMaster[]
+  complianceTasks    ComplianceTask[]
+  evidenceFiles      EvidenceFile[]
+  auditLogs          AuditLog[]
+  csvImportJobs      CsvImportJob[]
+  reportRuns         ReportRun[]
+  configs            Config[]
+
+  @@map("workspaces")
+}
+
+enum UserRole {
+  admin
+  reviewer
+  task_owner
+}
+
+model User {
+  id          String    @id @default(uuid())
+  workspaceId String    @map("workspace_id")
+  email       String
+  name        String
+  role        UserRole  @default(task_owner)
+  msOid       String?   @map("ms_oid") // Microsoft Object ID
+  isActive    Boolean   @default(true) @map("is_active")
+  lastLoginAt DateTime? @map("last_login_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  workspace            Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  ownedTasks           ComplianceTask[] @relation("TaskOwner")
+  reviewedTasks        ComplianceTask[] @relation("TaskReviewer")
+  auditLogs            AuditLog[]
+  csvImportJobs        CsvImportJob[]
+
+  @@unique([workspaceId, email])
+  @@index([workspaceId, email])
+  @@index([workspaceId, role])
+  @@map("users")
+}
+
+// ============================================================================
+// MASTER DATA TABLES
+// ============================================================================
+
+model Entity {
+  id          String   @id @default(uuid())
+  workspaceId String   @map("workspace_id")
+  name        String
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  complianceTasks ComplianceTask[]
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
+  @@map("entities")
+}
+
+model Department {
+  id          String   @id @default(uuid())
+  workspaceId String   @map("workspace_id")
+  name        String
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  complianceTasks ComplianceTask[]
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
+  @@map("departments")
+}
+
+model Law {
+  id          String   @id @default(uuid())
+  workspaceId String   @map("workspace_id")
+  name        String
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  complianceTasks ComplianceTask[]
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
+  @@map("laws")
+}
+
+model ComplianceMaster {
+  id          String   @id @default(uuid())
+  workspaceId String   @map("workspace_id")
+  name        String
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  complianceTasks ComplianceTask[]
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
+  @@map("compliances_master")
+}
+
+// ============================================================================
+// COMPLIANCE TASKS
+// ============================================================================
+
+enum TaskStatus {
+  PENDING
+  COMPLETED
+  SKIPPED
+}
+
+enum TaskFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  HALF_YEARLY
+  YEARLY
+  ONE_TIME
+}
+
+enum TaskImpact {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model ComplianceTask {
+  id                   String         @id @default(uuid())
+  workspaceId          String         @map("workspace_id")
+  complianceId         String         @map("compliance_id") // Business ID from CSV
+  title                String
+  description          String?
+  
+  // Foreign Keys
+  lawId                String         @map("law_id")
+  departmentId         String         @map("department_id")
+  entityId             String         @map("entity_id")
+  complianceMasterId   String?        @map("compliance_master_id")
+  ownerId              String         @map("owner_id") // Single assignee
+  reviewerId           String         @map("reviewer_id") // Single reviewer
+  
+  // Task Properties
+  status               TaskStatus     @default(PENDING)
+  frequency            TaskFrequency?
+  impact               TaskImpact?
+  dueDate              DateTime?      @map("due_date")
+  
+  createdAt            DateTime       @default(now()) @map("created_at")
+  updatedAt            DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  workspace         Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  law               Law                @relation(fields: [lawId], references: [id], onDelete: Restrict)
+  department        Department         @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  entity            Entity             @relation(fields: [entityId], references: [id], onDelete: Restrict)
+  complianceMaster  ComplianceMaster?  @relation(fields: [complianceMasterId], references: [id], onDelete: SetNull)
+  owner             User               @relation("TaskOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  reviewer          User               @relation("TaskReviewer", fields: [reviewerId], references: [id], onDelete: Restrict)
+  
+  taskExecutions    TaskExecution[]
+  evidenceFiles     EvidenceFile[]
+
+  @@unique([workspaceId, complianceId, entityId])
+  @@index([workspaceId, status])
+  @@index([workspaceId, ownerId])
+  @@index([workspaceId, reviewerId])
+  @@index([workspaceId, entityId])
+  @@index([workspaceId, dueDate])
+  @@map("compliance_tasks")
+}
+
+model TaskExecution {
+  id          String   @id @default(uuid())
+  taskId      String   @map("task_id")
+  userId      String   @map("user_id")
+  action      String   // 'COMPLETE' or 'SKIP'
+  comment     String?  // For completion
+  remarks     String?  // For skip reason
+  executedAt  DateTime @default(now()) @map("executed_at")
+
+  // Relations
+  task        ComplianceTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@map("task_executions")
+}
+
+// ============================================================================
+// EVIDENCE FILES (SharePoint Integration)
+// ============================================================================
+
+model EvidenceFile {
+  id          String   @id @default(uuid())
+  workspaceId String   @map("workspace_id")
+  taskId      String   @map("task_id")
+  uploadedBy  String   @map("uploaded_by")
+  
+  // SharePoint metadata
+  itemId      String   @map("item_id") // SharePoint item ID
+  webUrl      String   @map("web_url") // Direct link to file
+  name        String   // File name
+  sizeBytes   Int      @map("size_bytes")
+  mimeType    String   @map("mime_type")
+  siteId      String   @map("site_id")
+  driveId     String   @map("drive_id")
+  path        String   // Full path in SharePoint
+  
+  uploadedAt  DateTime @default(now()) @map("uploaded_at")
+
+  // Relations
+  workspace   Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  task        ComplianceTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, itemId]) // Prevent duplicate uploads
+  @@index([workspaceId, taskId])
+  @@map("evidence_files")
+}
+
+// ============================================================================
+// CSV IMPORT
+// ============================================================================
+
+enum ImportStatus {
+  PREVIEW
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+model CsvImportJob {
+  id            String       @id @default(uuid())
+  workspaceId   String       @map("workspace_id")
+  uploadedBy    String       @map("uploaded_by")
+  fileName      String       @map("file_name")
+  totalRows     Int          @map("total_rows")
+  successRows   Int          @default(0) @map("success_rows")
+  failedRows    Int          @default(0) @map("failed_rows")
+  status        ImportStatus @default(PREVIEW)
+  mode          String       // 'preview' or 'commit'
+  createdAt     DateTime     @default(now()) @map("created_at")
+  completedAt   DateTime?    @map("completed_at")
+
+  // Relations
+  workspace     Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  uploader      User              @relation(fields: [uploadedBy], references: [id], onDelete: Restrict)
+  rows          CsvImportJobRow[]
+
+  @@index([workspaceId])
+  @@index([workspaceId, createdAt])
+  @@map("csv_import_jobs")
+}
+
+model CsvImportJobRow {
+  id          String   @id @default(uuid())
+  jobId       String   @map("job_id")
+  rowNumber   Int      @map("row_number")
+  success     Boolean  @default(false)
+  errorMsg    String?  @map("error_msg")
+  rowData     Json     @map("row_data") // Store original CSV row data
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  job         CsvImportJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([jobId, success])
+  @@map("csv_import_job_rows")
+}
+
+// ============================================================================
+// AUDIT LOGS
+// ============================================================================
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  workspaceId String   @map("workspace_id")
+  userId      String   @map("user_id")
+  action      String   // Action type (e.g., 'ROLE_CHANGED', 'TASK_CREATED')
+  entityType  String   @map("entity_type") // Entity affected (e.g., 'USER', 'TASK')
+  entityId    String?  @map("entity_id") // ID of affected entity
+  changes     Json?    // Before/after values
+  requestId   String?  @map("request_id") // For request tracing
+  timestamp   DateTime @default(now())
+
+  // Relations
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([workspaceId, timestamp])
+  @@index([workspaceId, userId])
+  @@index([workspaceId, entityType, entityId])
+  @@map("audit_logs")
+}
+
+// ============================================================================
+// REPORTS
+// ============================================================================
+
+model ReportRun {
+  id            String   @id @default(uuid())
+  workspaceId   String   @map("workspace_id")
+  reportType    String   @map("report_type") // 'WEEKLY_TEAMS'
+  executedAt    DateTime @default(now()) @map("executed_at")
+  success       Boolean  @default(true)
+  errorMsg      String?  @map("error_msg")
+  periodStart   DateTime @map("period_start")
+  periodEnd     DateTime @map("period_end")
+
+  // Relations
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, reportType, periodStart])
+  @@map("report_runs")
+}
+
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+
+model Config {
+  id          String   @id @default(uuid())
+  workspaceId String   @map("workspace_id")
+  keyName     String   @map("key_name")
+  value       String   // Encrypted for sensitive values
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, keyName])
+  @@index([workspaceId, keyName])
+  @@map("configs")
+}
