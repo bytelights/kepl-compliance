@@ -12,9 +12,8 @@ import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(workspaceId: string) {
+  async findAll() {
     return this.prisma.user.findMany({
-      where: { workspaceId },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -41,20 +40,15 @@ export class UsersService {
     return user;
   }
 
-  async findByEmail(workspaceId: string, email: string) {
+  async findByEmail(email: string) {
     return this.prisma.user.findUnique({
-      where: {
-        workspaceId_email: {
-          workspaceId,
-          email,
-        },
-      },
+      where: { email },
     });
   }
 
   async create(data: CreateUserDto) {
     // Check if user already exists
-    const existingUser = await this.findByEmail(data.workspaceId, data.email);
+    const existingUser = await this.findByEmail(data.email);
 
     if (existingUser) {
       throw new BadRequestException('User with this email already exists');
@@ -62,7 +56,6 @@ export class UsersService {
 
     return this.prisma.user.create({
       data: {
-        workspaceId: data.workspaceId,
         email: data.email,
         name: data.name,
         role: data.role || 'task_owner',

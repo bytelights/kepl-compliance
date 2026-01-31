@@ -16,7 +16,6 @@ export class TasksService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(
-    workspaceId: string,
     query: TaskListQueryDto,
     userRole: string,
     userId: string,
@@ -25,7 +24,6 @@ export class TasksService {
     const skip = (page - 1) * limit;
 
     const where: any = {
-      workspaceId,
       ...(filters.entityId && { entityId: filters.entityId }),
       ...(filters.departmentId && { departmentId: filters.departmentId }),
       ...(filters.lawId && { lawId: filters.lawId }),
@@ -99,14 +97,9 @@ export class TasksService {
     };
   }
 
-  async findById(
-    id: string,
-    workspaceId: string,
-    userRole: string,
-    userId: string,
-  ) {
-    const task = await this.prisma.complianceTask.findFirst({
-      where: { id, workspaceId },
+  async findById(id: string, userRole: string, userId: string) {
+    const task = await this.prisma.complianceTask.findUnique({
+      where: { id },
       include: {
         entity: true,
         department: true,
@@ -143,12 +136,11 @@ export class TasksService {
     return task;
   }
 
-  async create(workspaceId: string, createDto: CreateTaskDto) {
+  async create(createDto: CreateTaskDto) {
     // Check for duplicate
     const existing = await this.prisma.complianceTask.findUnique({
       where: {
-        workspaceId_complianceId_entityId: {
-          workspaceId,
+        complianceId_entityId: {
           complianceId: createDto.complianceId,
           entityId: createDto.entityId,
         },
@@ -162,10 +154,7 @@ export class TasksService {
     }
 
     return this.prisma.complianceTask.create({
-      data: {
-        workspaceId,
-        ...createDto,
-      },
+      data: createDto,
       include: {
         entity: true,
         department: true,
@@ -176,8 +165,8 @@ export class TasksService {
     });
   }
 
-  async update(id: string, workspaceId: string, updateDto: UpdateTaskDto) {
-    await this.findById(id, workspaceId, 'admin', ''); // Check exists
+  async update(id: string, updateDto: UpdateTaskDto) {
+    await this.findById(id, 'admin', ''); // Check exists
 
     return this.prisma.complianceTask.update({
       where: { id },
@@ -192,18 +181,17 @@ export class TasksService {
     });
   }
 
-  async delete(id: string, workspaceId: string) {
-    await this.findById(id, workspaceId, 'admin', '');
+  async delete(id: string) {
+    await this.findById(id, 'admin', '');
     await this.prisma.complianceTask.delete({ where: { id } });
   }
 
   async completeTask(
     taskId: string,
-    workspaceId: string,
     userId: string,
     completeDto: CompleteTaskDto,
   ) {
-    const task = await this.findById(taskId, workspaceId, 'task_owner', userId);
+    const task = await this.findById(taskId, 'task_owner', userId);
 
     if (task.ownerId !== userId) {
       throw new ForbiddenException('You can only complete your own tasks');
@@ -242,13 +230,8 @@ export class TasksService {
     });
   }
 
-  async skipTask(
-    taskId: string,
-    workspaceId: string,
-    userId: string,
-    skipDto: SkipTaskDto,
-  ) {
-    const task = await this.findById(taskId, workspaceId, 'task_owner', userId);
+  async skipTask(taskId: string, userId: string, skipDto: SkipTaskDto) {
+    const task = await this.findById(taskId, 'task_owner', userId);
 
     if (task.ownerId !== userId) {
       throw new ForbiddenException('You can only skip your own tasks');

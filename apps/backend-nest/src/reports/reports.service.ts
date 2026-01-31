@@ -16,29 +16,18 @@ export class ReportsService {
   })
   async sendWeeklyReport() {
     console.log('Running weekly compliance report...');
-
-    // Get all workspaces
-    const workspaces = await this.prisma.workspace.findMany();
-
-    for (const workspace of workspaces) {
-      await this.generateAndSendReport(workspace.id);
-    }
+    await this.generateAndSendReport();
   }
 
-  async generateAndSendReport(workspaceId: string): Promise<void> {
+  async generateAndSendReport(): Promise<void> {
     try {
       // Get Teams webhook URL from configs
       const webhookConfig = await this.prisma.config.findUnique({
-        where: {
-          workspaceId_keyName: {
-            workspaceId,
-            keyName: 'teams_webhook_url',
-          },
-        },
+        where: { keyName: 'teams_webhook_url' },
       });
 
       if (!webhookConfig || !webhookConfig.active) {
-        console.log(`No active Teams webhook for workspace ${workspaceId}`);
+        console.log('No active Teams webhook configured');
         return;
       }
 
@@ -55,7 +44,6 @@ export class ReportsService {
       // Check for duplicate report this period
       const existingReport = await this.prisma.reportRun.findFirst({
         where: {
-          workspaceId,
           reportType: 'WEEKLY_TEAMS',
           periodStart: { gte: periodStart },
           success: true,
@@ -63,25 +51,23 @@ export class ReportsService {
       });
 
       if (existingReport) {
-        console.log(`Report already sent for this period`);
+        console.log('Report already sent for this period');
         return;
       }
 
       // Get task statistics
       const [pending, dueNext7Days, overdue] = await Promise.all([
         this.prisma.complianceTask.count({
-          where: { workspaceId, status: 'PENDING' },
+          where: { status: 'PENDING' },
         }),
         this.prisma.complianceTask.count({
           where: {
-            workspaceId,
             status: 'PENDING',
             dueDate: { gte: today, lte: next7Days },
           },
         }),
         this.prisma.complianceTask.count({
           where: {
-            workspaceId,
             status: 'PENDING',
             dueDate: { lt: today },
           },
@@ -91,7 +77,6 @@ export class ReportsService {
       // Get top tasks
       const tasks = await this.prisma.complianceTask.findMany({
         where: {
-          workspaceId,
           status: 'PENDING',
           OR: [
             { dueDate: { lt: today } }, // Overdue
@@ -130,7 +115,6 @@ export class ReportsService {
       // Log successful report
       await this.prisma.reportRun.create({
         data: {
-          workspaceId,
           reportType: 'WEEKLY_TEAMS',
           success: true,
           periodStart,
@@ -138,16 +122,13 @@ export class ReportsService {
         },
       });
 
-      console.log(
-        `Weekly report sent successfully for workspace ${workspaceId}`,
-      );
+      console.log('Weekly report sent successfully');
     } catch (error: any) {
       console.error('Failed to send weekly report:', error);
 
       // Log failed report
       await this.prisma.reportRun.create({
         data: {
-          workspaceId,
           reportType: 'WEEKLY_TEAMS',
           success: false,
           errorMsg: error.message,
@@ -159,7 +140,7 @@ export class ReportsService {
   }
 
   // Manual trigger for testing
-  async sendReportNow(workspaceId: string): Promise<void> {
-    await this.generateAndSendReport(workspaceId);
+  async sendReportNow(): Promise<void> {
+    await this.generateAndSendReport();
   }
 }

@@ -49,7 +49,6 @@ export class IntegrationsService {
   }
 
   async setConfig(
-    workspaceId: string,
     keyName: string,
     value: string,
     encrypt = false,
@@ -57,23 +56,15 @@ export class IntegrationsService {
     const finalValue = encrypt ? this.encrypt(value) : value;
 
     await this.prisma.config.upsert({
-      where: {
-        workspaceId_keyName: { workspaceId, keyName },
-      },
+      where: { keyName },
       update: { value: finalValue, active: true },
-      create: { workspaceId, keyName, value: finalValue, active: true },
+      create: { keyName, value: finalValue, active: true },
     });
   }
 
-  async getConfig(
-    workspaceId: string,
-    keyName: string,
-    decrypt = false,
-  ): Promise<string | null> {
+  async getConfig(keyName: string, decrypt = false): Promise<string | null> {
     const config = await this.prisma.config.findUnique({
-      where: {
-        workspaceId_keyName: { workspaceId, keyName },
-      },
+      where: { keyName },
     });
 
     if (!config || !config.active) return null;
@@ -82,30 +73,26 @@ export class IntegrationsService {
   }
 
   // SharePoint config
-  async updateSharePointConfig(
-    workspaceId: string,
-    config: {
-      siteId: string;
-      driveId: string;
-      baseFolderName?: string;
-    },
-  ) {
+  async updateSharePointConfig(config: {
+    siteId: string;
+    driveId: string;
+    baseFolderName?: string;
+  }) {
     await Promise.all([
-      this.setConfig(workspaceId, 'sharepoint_site_id', config.siteId),
-      this.setConfig(workspaceId, 'sharepoint_drive_id', config.driveId),
+      this.setConfig('sharepoint_site_id', config.siteId),
+      this.setConfig('sharepoint_drive_id', config.driveId),
       this.setConfig(
-        workspaceId,
         'sharepoint_base_folder_name',
         config.baseFolderName || 'Compliance-Documents',
       ),
     ]);
   }
 
-  async getSharePointConfig(workspaceId: string) {
+  async getSharePointConfig() {
     const [siteId, driveId, baseFolderName] = await Promise.all([
-      this.getConfig(workspaceId, 'sharepoint_site_id'),
-      this.getConfig(workspaceId, 'sharepoint_drive_id'),
-      this.getConfig(workspaceId, 'sharepoint_base_folder_name'),
+      this.getConfig('sharepoint_site_id'),
+      this.getConfig('sharepoint_drive_id'),
+      this.getConfig('sharepoint_base_folder_name'),
     ]);
 
     return {
@@ -116,47 +103,33 @@ export class IntegrationsService {
   }
 
   // Teams config
-  async updateTeamsConfig(
-    workspaceId: string,
-    config: {
-      webhookUrl: string;
-      weeklyReportDay?: number;
-      weeklyReportTime?: string;
-      timezone?: string;
-    },
-  ) {
+  async updateTeamsConfig(config: {
+    webhookUrl: string;
+    weeklyReportDay?: number;
+    weeklyReportTime?: string;
+    timezone?: string;
+  }) {
     await Promise.all(
       [
-        this.setConfig(
-          workspaceId,
-          'teams_webhook_url',
-          config.webhookUrl,
-          true,
-        ),
+        this.setConfig('teams_webhook_url', config.webhookUrl, true),
         config.weeklyReportDay !== undefined &&
           this.setConfig(
-            workspaceId,
             'weekly_report_day_of_week',
             config.weeklyReportDay.toString(),
           ),
         config.weeklyReportTime &&
-          this.setConfig(
-            workspaceId,
-            'weekly_report_time_hhmm',
-            config.weeklyReportTime,
-          ),
-        config.timezone &&
-          this.setConfig(workspaceId, 'timezone', config.timezone),
+          this.setConfig('weekly_report_time_hhmm', config.weeklyReportTime),
+        config.timezone && this.setConfig('timezone', config.timezone),
       ].filter(Boolean),
     );
   }
 
-  async getTeamsConfig(workspaceId: string) {
+  async getTeamsConfig() {
     const [webhookUrl, dayOfWeek, time, timezone] = await Promise.all([
-      this.getConfig(workspaceId, 'teams_webhook_url', true),
-      this.getConfig(workspaceId, 'weekly_report_day_of_week'),
-      this.getConfig(workspaceId, 'weekly_report_time_hhmm'),
-      this.getConfig(workspaceId, 'timezone'),
+      this.getConfig('teams_webhook_url', true),
+      this.getConfig('weekly_report_day_of_week'),
+      this.getConfig('weekly_report_time_hhmm'),
+      this.getConfig('timezone'),
     ]);
 
     return {

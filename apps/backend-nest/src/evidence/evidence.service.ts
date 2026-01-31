@@ -17,13 +17,12 @@ export class EvidenceService {
 
   async createUploadSession(
     taskId: string,
-    workspaceId: string,
     userId: string,
     createDto: CreateUploadSessionDto,
   ) {
     // Get task to get entity and compliance ID
-    const task = await this.prisma.complianceTask.findFirst({
-      where: { id: taskId, workspaceId },
+    const task = await this.prisma.complianceTask.findUnique({
+      where: { id: taskId },
       include: { entity: true },
     });
 
@@ -56,13 +55,12 @@ export class EvidenceService {
 
   async completeUpload(
     taskId: string,
-    workspaceId: string,
     userId: string,
     completeDto: CompleteUploadDto,
   ) {
     // Verify task exists
-    const task = await this.prisma.complianceTask.findFirst({
-      where: { id: taskId, workspaceId },
+    const task = await this.prisma.complianceTask.findUnique({
+      where: { id: taskId },
     });
 
     if (!task) {
@@ -86,7 +84,6 @@ export class EvidenceService {
     // Create evidence record
     const evidence = await this.prisma.evidenceFile.create({
       data: {
-        workspaceId,
         taskId,
         uploadedBy: userId,
         itemId: completeDto.itemId,
@@ -103,21 +100,20 @@ export class EvidenceService {
     return evidence;
   }
 
-  async findAll(taskId: string, workspaceId: string) {
+  async findAll(taskId: string) {
     return this.prisma.evidenceFile.findMany({
-      where: { taskId, workspaceId },
+      where: { taskId },
       orderBy: { uploadedAt: 'desc' },
     });
   }
 
   async delete(
     evidenceId: string,
-    workspaceId: string,
     userId: string,
     userRole: string,
   ) {
-    const evidence = await this.prisma.evidenceFile.findFirst({
-      where: { id: evidenceId, workspaceId },
+    const evidence = await this.prisma.evidenceFile.findUnique({
+      where: { id: evidenceId },
       include: { task: true },
     });
 

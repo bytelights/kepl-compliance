@@ -7,12 +7,12 @@ import {
   UnauthorizedException,
   Post,
 } from '@nestjs/common';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
+import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 
 @Controller('auth')
 export class AuthController {
@@ -22,9 +22,9 @@ export class AuthController {
   ) {}
 
   @Get('microsoft/login')
-  microsoftLogin(@Res() res: Response) {
+  async microsoftLogin(@Res() res: Response) {
     try {
-      const authUrl = this.authService.getAuthUrl();
+      const authUrl = await this.authService.getAuthUrl();
       res.redirect(authUrl);
     } catch (error) {
       console.error('Login redirect error:', error);
@@ -68,7 +68,6 @@ export class AuthController {
         id: user.sub,
         email: user.email,
         role: user.role,
-        workspaceId: user.workspaceId,
       },
     };
   }

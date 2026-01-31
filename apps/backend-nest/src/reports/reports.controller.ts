@@ -1,6 +1,6 @@
 import { Controller, Post, Get, Body, UseGuards, Query, Res } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { ReportsService } from './reports.service';
 import { TeamsService } from './teams.service';
 import { ExportService } from './export.service';
@@ -18,13 +18,13 @@ export class ReportsController {
   ) {}
 
   /**
-   * Manually trigger weekly report for current workspace
+   * Manually trigger weekly report
    * Admin/Reviewer only
    */
   @Post('weekly/trigger')
   @Roles('ADMIN', 'REVIEWER')
-  async triggerWeeklyReport(@CurrentUser() user: any) {
-    await this.reportsService.sendReportNow(user.workspaceId);
+  async triggerWeeklyReport() {
+    await this.reportsService.sendReportNow();
     return {
       success: true,
       message: 'Weekly report triggered successfully',
@@ -48,7 +48,7 @@ export class ReportsController {
    */
   @Get('history')
   @Roles('ADMIN', 'REVIEWER')
-  async getReportHistory(@CurrentUser() user: any) {
+  async getReportHistory() {
     // This would query the reportRun table
     return {
       success: true,
@@ -63,27 +63,22 @@ export class ReportsController {
   @Get('export/compliance-summary')
   @Roles('ADMIN', 'REVIEWER')
   async exportComplianceSummary(
-    @CurrentUser() user: any,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
-    @Res() res?: Response,
+    @Res() res: Response = undefined as any,
   ) {
     const start = startDate ? new Date(startDate) : undefined;
     const end = endDate ? new Date(endDate) : undefined;
 
-    const data = await this.exportService.generateComplianceSummary(
-      user.workspaceId,
-      start,
-      end,
-    );
+    const data = await this.exportService.generateComplianceSummary(start, end);
     const csv = this.exportService.convertToCSV(data);
 
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader(
+    res!.setHeader('Content-Type', 'text/csv');
+    res!.setHeader(
       'Content-Disposition',
       `attachment; filename=compliance-summary-${new Date().toISOString().split('T')[0]}.csv`,
     );
-    res.send(csv);
+    res!.send(csv);
   }
 
   /**
@@ -92,21 +87,16 @@ export class ReportsController {
    */
   @Get('export/department-report')
   @Roles('ADMIN', 'REVIEWER')
-  async exportDepartmentReport(
-    @CurrentUser() user: any,
-    @Res() res?: Response,
-  ) {
-    const data = await this.exportService.generateDepartmentReport(
-      user.workspaceId,
-    );
+  async exportDepartmentReport(@Res() res: Response = undefined as any) {
+    const data = await this.exportService.generateDepartmentReport();
     const csv = this.exportService.convertToCSV(data);
 
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader(
+    res!.setHeader('Content-Type', 'text/csv');
+    res!.setHeader(
       'Content-Disposition',
       `attachment; filename=department-report-${new Date().toISOString().split('T')[0]}.csv`,
     );
-    res.send(csv);
+    res!.send(csv);
   }
 
   /**
@@ -115,17 +105,15 @@ export class ReportsController {
    */
   @Get('export/overdue-tasks')
   @Roles('ADMIN', 'REVIEWER')
-  async exportOverdueTasks(@CurrentUser() user: any, @Res() res?: Response) {
-    const data = await this.exportService.generateOverdueReport(
-      user.workspaceId,
-    );
+  async exportOverdueTasks(@Res() res: Response = undefined as any) {
+    const data = await this.exportService.generateOverdueReport();
     const csv = this.exportService.convertToCSV(data);
 
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader(
+    res!.setHeader('Content-Type', 'text/csv');
+    res!.setHeader(
       'Content-Disposition',
       `attachment; filename=overdue-tasks-${new Date().toISOString().split('T')[0]}.csv`,
     );
-    res.send(csv);
+    res!.send(csv);
   }
 }

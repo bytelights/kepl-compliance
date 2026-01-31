@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { MasterDataService } from '../master-data/master-data.service';
 import { UsersService } from '../users/users.service';
 import * as Papa from 'papaparse';
+import { TaskStatus, TaskFrequency, TaskImpact } from '@prisma/client';
 
 interface CsvRow {
   'Compliance Id': string;
@@ -34,7 +35,6 @@ export class CsvImportService {
 
   async parseAndValidate(
     fileContent: string,
-    workspaceId: string,
     mode: 'preview' | 'commit',
     userId: string,
   ) {
@@ -82,7 +82,6 @@ export class CsvImportService {
     // Create import job
     const job = await this.prisma.csvImportJob.create({
       data: {
-        workspaceId,
         uploadedBy: userId,
         fileName: `import_${Date.now()}.csv`,
         totalRows: rows.length,
@@ -94,7 +93,7 @@ export class CsvImportService {
     // Validate and process each row
     const results = await Promise.all(
       rows.map((row, index) =>
-        this.validateAndProcessRow(row, index + 1, workspaceId, job.id, mode),
+        this.validateAndProcessRow(row, index + 1, job.id, mode),
       ),
     );
 
@@ -129,7 +128,6 @@ export class CsvImportService {
   private async validateAndProcessRow(
     row: CsvRow,
     rowNumber: number,
-    workspaceId: string,
     jobId: string,
     mode: 'preview' | 'commit',
   ): Promise<ValidationResult> {
@@ -173,34 +171,27 @@ export class CsvImportService {
       // Auto-create or find master data
       const entity = await this.masterDataService.findOrCreate(
         'entities',
-        workspaceId,
         row['Operating Unit'].trim(),
       );
 
       const department = await this.masterDataService.findOrCreate(
         'departments',
-        workspaceId,
         row['Department'].trim(),
       );
 
       const law = await this.masterDataService.findOrCreate(
         'laws',
-        workspaceId,
         row['Name of Law'].trim(),
       );
 
       // Find owner and reviewer (must exist)
-      const owner = await this.usersService.findByEmail(
-        workspaceId,
-        row['Owner'].trim(),
-      );
+      const owner = await this.usersService.findByEmail(row['Owner'].trim());
 
       if (!owner) {
         errors.push(`Owner email not found: ${row['Owner']}`);
       }
 
       const reviewer = await this.usersService.findByEmail(
-        workspaceId,
         row['Reviewer'].trim(),
       );
 
@@ -222,8 +213,7 @@ export class CsvImportService {
       // Check for duplicates
       const existing = await this.prisma.complianceTask.findUnique({
         where: {
-          workspaceId_complianceId_entityId: {
-            workspaceId,
+          complianceId_entityId: {
             complianceId: row['Compliance Id'].trim(),
             entityId: entity!.id,
           },
@@ -252,7 +242,6 @@ export class CsvImportService {
 
       // Commit mode: create task
       const taskData = {
-        workspaceId,
         complianceId: row['Compliance Id'].trim(),
         title: row['Title'].trim(),
         lawId: law!.id,
@@ -297,41 +286,40 @@ export class CsvImportService {
     });
   }
 
-  private mapFrequency(value: string): string | undefined {
-    const map: Record<string, string> = {
-      daily: 'DAILY',
-      weekly: 'WEEKLY',
-      monthly: 'MONTHLY',
-      quarterly: 'QUARTERLY',
-      'half-yearly': 'HALF_YEARLY',
-      yearly: 'YEARLY',
-      'one-time': 'ONE_TIME',
+  private mapFrequency(value: string): TaskFrequency | undefined {
+    const map: Record<string, TaskFrequency> = {
+      daily: TaskFrequency.DAILY,
+      weekly: TaskFrequency.WEEKLY,
+      monthly: TaskFrequency.MONTHLY,
+      quarterly: TaskFrequency.QUARTERLY,
+      'half-yearly': TaskFrequency.HALF_YEARLY,
+      yearly: TaskFrequency.YEARLY,
+      'one-time': TaskFrequency.ONE_TIME,
     };
     return value ? map[value.toLowerCase()] : undefined;
   }
 
-  private mapImpact(value: string): string | undefined {
-    const map: Record<string, string> = {
-      low: 'LOW',
-      medium: 'MEDIUM',
-      high: 'HIGH',
-      critical: 'CRITICAL',
+  private mapImpact(value: string): TaskImpact | undefined {
+    const map: Record<string, TaskImpact> = {
+      low: TaskImpact.LOW,
+      medium: TaskImpact.MEDIUM,
+      high: TaskImpact.HIGH,
+      critical: TaskImpact.CRITICAL,
     };
     return value ? map[value.toLowerCase()] : undefined;
   }
 
-  private mapStatus(value: string): string {
-    const map: Record<string, string> = {
-      pending: 'PENDING',
-      completed: 'COMPLETED',
-      skipped: 'SKIPPED',
+  private mapStatus(value: string): TaskStatus {
+    const map: Record<string, TaskStatus> = {
+      pending: TaskStatus.PENDING,
+      completed: TaskStatus.COMPLETED,
+      skipped: TaskStatus.SKIPPED,
     };
-    return value ? map[value.toLowerCase()] || 'PENDING' : 'PENDING';
+    return value ? map[value.toLowerCase()] || TaskStatus.PENDING : TaskStatus.PENDING;
   }
 
-  async getImportJobs(workspaceId: string) {
+  async getImportJobs() {
     return this.prisma.csvImportJob.findMany({
-      where: { workspaceId },
       orderBy: { createdAt: 'desc' },
       include: {
         uploader: { select: { name: true, email: true } },
@@ -339,9 +327,9 @@ export class CsvImportService {
     });
   }
 
-  async getImportJobDetails(jobId: string, workspaceId: string) {
-    return this.prisma.csvImportJob.findFirst({
-      where: { id: jobId, workspaceId },
+  async getImportJobDetails(jobId: string) {
+    return this.prisma.csvImportJob.findUnique({
+      where: { id: jobId },
       include: {
         uploader: { select: { name: true, email: true } },
         rows: {

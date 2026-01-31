@@ -14,7 +14,7 @@ import { CompleteUploadDto } from './dto/complete-upload.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
+import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 
 @Controller('tasks/:taskId/evidence')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -29,7 +29,6 @@ export class EvidenceController {
   ) {
     const data = await this.evidenceService.createUploadSession(
       taskId,
-      user.workspaceId,
       user.sub,
       createDto,
     );
@@ -44,7 +43,6 @@ export class EvidenceController {
   ) {
     const data = await this.evidenceService.completeUpload(
       taskId,
-      user.workspaceId,
       user.sub,
       completeDto,
     );
@@ -56,11 +54,8 @@ export class EvidenceController {
   }
 
   @Get()
-  async findAll(
-    @Param('taskId') taskId: string,
-    @CurrentUser() user: JwtPayload,
-  ) {
-    const data = await this.evidenceService.findAll(taskId, user.workspaceId);
+  async findAll(@Param('taskId') taskId: string) {
+    const data = await this.evidenceService.findAll(taskId);
     return { success: true, data };
   }
 }
@@ -73,12 +68,7 @@ export class EvidenceManagementController {
   @Delete(':id')
   @Roles('admin', 'task_owner')
   async delete(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
-    await this.evidenceService.delete(
-      id,
-      user.workspaceId,
-      user.sub,
-      user.role,
-    );
+    await this.evidenceService.delete(id, user.sub, user.role);
     return { success: true, message: 'Evidence deleted successfully' };
   }
 }

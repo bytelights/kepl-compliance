@@ -7,6 +7,7 @@ import {
   IsDateString,
   MaxLength,
 } from 'class-validator';
+import { TaskFrequency, TaskImpact } from '@prisma/client';
 
 export class CreateTaskDto {
   @IsString()
@@ -42,21 +43,13 @@ export class CreateTaskDto {
   @IsUUID()
   reviewerId: string; // Single reviewer
 
-  @IsEnum([
-    'DAILY',
-    'WEEKLY',
-    'MONTHLY',
-    'QUARTERLY',
-    'HALF_YEARLY',
-    'YEARLY',
-    'ONE_TIME',
-  ])
+  @IsEnum(TaskFrequency)
   @IsOptional()
-  frequency?: string;
+  frequency?: TaskFrequency;
 
-  @IsEnum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'])
+  @IsEnum(TaskImpact)
   @IsOptional()
-  impact?: string;
+  impact?: TaskImpact;
 
   @IsDateString()
   @IsOptional()

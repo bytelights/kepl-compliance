@@ -1,1 +1,116 @@
-/* You can add global styles to this file, and also import other style files */
+/* Global styles */
+@use '@angular/material' as mat;
+
+@include mat.core();
+
+// Define consistent theme colors
+$theme: mat.define-theme(
+  (
+    color: (
+      theme-type: light,
+      primary: mat.$azure-palette,
+    ),
+  )
+);
+
+@include mat.all-component-themes($theme);
+
+// Remove all rounded corners globally
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  border-radius: 0 !important;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  background-color: #f5f5f5;
+}
+
+// Spacer utility
+.spacer {
+  flex: 1 1 auto;
+}
+
+// Loading container
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+// Table styles
+table {
+  width: 100%;
+}
+
+// Form field full width
+.full-width {
+  width: 100%;
+}
+
+// Messages
+.error-message {
+  color: #f44336;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.success-message {
+  color: #4caf50;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+// Override Material rounded corners for all components
+.mat-mdc-button,
+.mat-mdc-raised-button,
+.mat-mdc-outlined-button,
+.mat-mdc-unelevated-button,
+.mat-mdc-fab,
+.mat-mdc-mini-fab,
+.mat-mdc-card,
+.mat-mdc-form-field,
+.mat-mdc-text-field-wrapper,
+.mat-mdc-chip,
+.mat-mdc-dialog-container,
+.mat-mdc-snack-bar-container,
+.mat-mdc-menu-panel,
+.mat-mdc-select-panel,
+.mat-mdc-autocomplete-panel {
+  border-radius: 0 !important;
+}
+
+// Ensure all Material buttons use theme colors consistently
+.mat-mdc-raised-button.mat-primary {
+  --mdc-protected-button-container-color: var(--mat-app-primary);
+  --mdc-protected-button-label-text-color: white;
+}
+
+.mat-mdc-raised-button.mat-accent {
+  --mdc-protected-button-container-color: var(--mat-app-accent);
+  --mdc-protected-button-label-text-color: white;
+}
+
+.mat-mdc-raised-button.mat-warn {
+  --mdc-protected-button-container-color: var(--mat-app-warn);
+  --mdc-protected-button-label-text-color: white;
+}
+
+// Card consistency
+.mat-mdc-card {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.mat-mdc-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}

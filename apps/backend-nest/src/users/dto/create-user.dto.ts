@@ -1,9 +1,6 @@
-import { IsEmail, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsEmail, IsEnum, IsOptional, IsString } from 'class-validator';
 
 export class CreateUserDto {
-  @IsUUID()
-  workspaceId: string;
-
   @IsEmail()
   email: string;
 

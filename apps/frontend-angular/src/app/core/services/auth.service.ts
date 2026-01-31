@@ -6,8 +6,8 @@ import { environment } from '../../../environments/environment';
 export interface CurrentUser {
   id: string;
   email: string;
+  name: string;
   role: string;
-  workspaceId: string;
 }
 
 @Injectable({
@@ -44,8 +44,13 @@ export class AuthService {
           this.currentUserSubject.next(null);
           return of(null);
         }),
-        tap(() => this.currentUserSubject.value)
-      );
+        tap((response) => {
+          if (response && 'data' in response) {
+            return response.data;
+          }
+          return null;
+        })
+      ) as Observable<CurrentUser | null>;
   }
 
   logout(): Observable<any> {

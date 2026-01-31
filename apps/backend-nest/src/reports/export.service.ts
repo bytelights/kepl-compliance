@@ -9,11 +9,10 @@ export class ExportService {
    * Generate compliance summary report data
    */
   async generateComplianceSummary(
-    workspaceId: string,
     startDate?: Date,
     endDate?: Date,
   ): Promise<any[]> {
-    const where: any = { workspaceId };
+    const where: any = {};
 
     if (startDate && endDate) {
       where.dueDate = {
@@ -44,7 +43,7 @@ export class ExportService {
       'Status': task.status,
       'Impact': task.impact || '',
       'Due Date': task.dueDate?.toISOString().split('T')[0] || '',
-      'Completion Date': task.completionDate?.toISOString().split('T')[0] || '',
+      'Completion Date': (task as any).completedAt?.toISOString().split('T')[0] || '',
       'Owner': task.owner.name,
       'Owner Email': task.owner.email,
       'Reviewer': task.reviewer.name,
@@ -56,11 +55,10 @@ export class ExportService {
   /**
    * Generate department-wise compliance report
    */
-  async generateDepartmentReport(workspaceId: string): Promise<any[]> {
+  async generateDepartmentReport(): Promise<any[]> {
     const departments = await this.prisma.department.findMany({
-      where: { workspaceId },
       include: {
-        tasks: {
+        complianceTasks: {
           select: {
             status: true,
             dueDate: true,
@@ -72,11 +70,11 @@ export class ExportService {
     const today = new Date();
 
     return departments.map((dept) => {
-      const totalTasks = dept.tasks.length;
-      const completed = dept.tasks.filter((t) => t.status === 'COMPLETED').length;
-      const pending = dept.tasks.filter((t) => t.status === 'PENDING').length;
-      const skipped = dept.tasks.filter((t) => t.status === 'SKIPPED').length;
-      const overdue = dept.tasks.filter(
+      const totalTasks = dept.complianceTasks.length;
+      const completed = dept.complianceTasks.filter((t) => t.status === 'COMPLETED').length;
+      const pending = dept.complianceTasks.filter((t) => t.status === 'PENDING').length;
+      const skipped = dept.complianceTasks.filter((t) => t.status === 'SKIPPED').length;
+      const overdue = dept.complianceTasks.filter(
         (t) => t.status === 'PENDING' && t.dueDate && t.dueDate < today,
       ).length;
 
@@ -95,12 +93,11 @@ export class ExportService {
   /**
    * Generate overdue tasks report
    */
-  async generateOverdueReport(workspaceId: string): Promise<any[]> {
+  async generateOverdueReport(): Promise<any[]> {
     const today = new Date();
 
     const tasks = await this.prisma.complianceTask.findMany({
       where: {
-        workspaceId,
         status: 'PENDING',
         dueDate: { lt: today },
       },

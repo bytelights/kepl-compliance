@@ -15,7 +15,7 @@ import { CsvImportService } from './csv-import.service';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
+import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 
 @Controller('admin/import')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -44,7 +44,6 @@ export class CsvImportController {
 
     const result = await this.csvImportService.parseAndValidate(
       fileContent,
-      user.workspaceId,
       mode as 'preview' | 'commit',
       user.sub,
     );
@@ -60,20 +59,14 @@ export class CsvImportController {
   }
 
   @Get('jobs')
-  async getImportJobs(@CurrentUser() user: JwtPayload) {
-    const data = await this.csvImportService.getImportJobs(user.workspaceId);
+  async getImportJobs() {
+    const data = await this.csvImportService.getImportJobs();
     return { success: true, data };
   }
 
   @Get('jobs/:id')
-  async getImportJobDetails(
-    @Param('id') id: string,
-    @CurrentUser() user: JwtPayload,
-  ) {
-    const data = await this.csvImportService.getImportJobDetails(
-      id,
-      user.workspaceId,
-    );
+  async getImportJobDetails(@Param('id') id: string) {
+    const data = await this.csvImportService.getImportJobDetails(id);
     return { success: true, data };
   }
 }

@@ -1,0 +1,181 @@
+erDiagram
+    %% ========================================
+    %% COMPLIANCE MANAGEMENT SYSTEM - ERD
+    %% ByteLights Private Limited
+    %% ========================================
+
+    users ||--o{ compliance_tasks : "owns (ownerId)"
+    users ||--o{ compliance_tasks : "reviews (reviewerId)"
+    users ||--o{ evidence_files : "uploads"
+    users ||--o{ csv_import_jobs : "uploads"
+    users ||--o{ audit_logs : "performs actions"
+    
+    entities ||--o{ compliance_tasks : "has tasks"
+    
+    departments ||--o{ compliance_tasks : "responsible for"
+    departments ||--o{ compliances_master : "owns templates"
+    
+    laws ||--o{ compliance_tasks : "governs"
+    laws ||--o{ compliances_master : "governs"
+    
+    compliances_master ||--o{ compliance_tasks : "template for"
+    
+    compliance_tasks ||--o{ evidence_files : "has evidence"
+    
+    csv_import_jobs ||--o{ csv_import_job_rows : "contains rows"
+
+    %% ========================================
+    %% USER TABLE
+    %% ========================================
+    users {
+        uuid id PK "Primary Key"
+        varchar email UK "Unique email"
+        varchar name "Full name"
+        enum role "admin|reviewer|task_owner"
+        varchar msOid "Microsoft Object ID"
+        boolean isActive "Account active"
+        timestamp lastLoginAt "Last login time"
+        timestamp createdAt "Created at"
+        timestamp updatedAt "Updated at"
+    }
+
+    %% ========================================
+    %% MASTER DATA TABLES
+    %% ========================================
+    entities {
+        uuid id PK
+        varchar name UK "Unique entity name"
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    departments {
+        uuid id PK
+        varchar name UK "Unique department name"
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    laws {
+        uuid id PK
+        varchar name UK "Unique law name"
+        text description "Law description"
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    compliances_master {
+        uuid id PK
+        varchar complianceId "Human-readable ID"
+        varchar name UK "Unique template name"
+        varchar title "Task title template"
+        text description "Task description"
+        uuid lawId FK "Related law"
+        uuid departmentId FK "Responsible department"
+        enum frequency "DAILY|WEEKLY|MONTHLY|QUARTERLY|YEARLY"
+        enum impact "HIGH|MEDIUM|LOW"
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    %% ========================================
+    %% CORE COMPLIANCE TABLE
+    %% ========================================
+    compliance_tasks {
+        uuid id PK
+        varchar complianceId "Human-readable ID"
+        varchar title "Task title"
+        text description "Task details"
+        enum status "PENDING|COMPLETED|SKIPPED"
+        date dueDate "Due date"
+        timestamp completedAt "Completed timestamp"
+        timestamp skippedAt "Skipped timestamp"
+        uuid lawId FK "Related law"
+        uuid departmentId FK "Responsible department"
+        uuid entityId FK "Related entity"
+        uuid ownerId FK "Task owner"
+        uuid reviewerId FK "Task reviewer"
+        uuid complianceMasterId FK "Source template"
+        varchar frequency "Task frequency"
+        varchar impact "Task impact"
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    %% ========================================
+    %% EVIDENCE TABLE
+    %% ========================================
+    evidence_files {
+        uuid id PK
+        uuid taskId FK "Related task"
+        varchar fileName "Original filename"
+        bigint fileSize "Size in bytes"
+        varchar mimeType "File MIME type"
+        varchar sharepointFileId "SharePoint file ID"
+        varchar sharepointWebUrl "SharePoint URL"
+        uuid uploadedById FK "Uploader user"
+        timestamp uploadedAt
+    }
+
+    %% ========================================
+    %% CSV IMPORT TABLES
+    %% ========================================
+    csv_import_jobs {
+        uuid id PK
+        varchar fileName "CSV filename"
+        int totalRows "Total rows"
+        int validRows "Valid rows"
+        int errorRows "Error rows"
+        enum status "PENDING|COMPLETED|FAILED"
+        enum mode "PREVIEW|COMMIT"
+        uuid uploadedBy FK "Uploader"
+        timestamp createdAt
+    }
+
+    csv_import_job_rows {
+        uuid id PK
+        uuid jobId FK "Parent job"
+        int rowNumber "Row number in CSV"
+        boolean isValid "Validation result"
+        text errorMessage "Error details"
+        jsonb rowData "Original row data"
+        timestamp createdAt
+    }
+
+    %% ========================================
+    %% AUDIT & REPORTING TABLES
+    %% ========================================
+    audit_logs {
+        uuid id PK
+        uuid userId FK "User who acted"
+        varchar action "Action type"
+        varchar entityType "Entity type"
+        varchar entityId "Entity ID"
+        jsonb changes "Before/after changes"
+        varchar ipAddress "User IP"
+        varchar userAgent "User agent"
+        timestamp timestamp "Action time"
+    }
+
+    report_runs {
+        uuid id PK
+        varchar reportType "Report type"
+        date periodStart "Period start"
+        date periodEnd "Period end"
+        enum status "SUCCESS|FAILED"
+        text errorMessage "Error if failed"
+        jsonb metadata "Report metadata"
+        timestamp createdAt
+    }
+
+    %% ========================================
+    %% CONFIGURATION TABLE
+    %% ========================================
+    configs {
+        uuid id PK
+        varchar keyName UK "Config key"
+        text value "Config value (encrypted)"
+        boolean active "Is active"
+        timestamp createdAt
+        timestamp updatedAt
+    }

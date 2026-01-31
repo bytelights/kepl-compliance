@@ -14,8 +14,8 @@ export class UsersController {
 
   @Get()
   @Roles('admin')
-  async findAll(@CurrentUser() user: JwtPayload) {
-    const users = await this.usersService.findAll(user.workspaceId);
+  async findAll() {
+    const users = await this.usersService.findAll();
     return {
       success: true,
       data: users,

@@ -24,25 +24,15 @@ export class MasterDataController {
 
   // ========== ENTITIES ==========
   @Get('entities')
-  async getAllEntities(@CurrentUser() user: JwtPayload) {
-    const data = await this.masterDataService.findAll(
-      'entities',
-      user.workspaceId,
-    );
+  async getAllEntities() {
+    const data = await this.masterDataService.findAll('entities');
     return { success: true, data };
   }
 
   @Post('entities')
   @Roles('admin')
-  async createEntity(
-    @CurrentUser() user: JwtPayload,
-    @Body() createDto: CreateMasterDataDto,
-  ) {
-    const data = await this.masterDataService.create(
-      'entities',
-      user.workspaceId,
-      createDto,
-    );
+  async createEntity(@Body() createDto: CreateMasterDataDto) {
+    const data = await this.masterDataService.create('entities', createDto);
     return { success: true, data, message: 'Entity created successfully' };
   }
 
@@ -50,15 +40,9 @@ export class MasterDataController {
   @Roles('admin')
   async updateEntity(
     @Param('id') id: string,
-    @CurrentUser() user: JwtPayload,
     @Body() updateDto: UpdateMasterDataDto,
   ) {
-    const data = await this.masterDataService.update(
-      'entities',
-      id,
-      user.workspaceId,
-      updateDto,
-    );
+    const data = await this.masterDataService.update('entities', id, updateDto);
     return { success: true, data, message: 'Entity updated successfully' };
   }
 
@@ -71,25 +55,15 @@ export class MasterDataController {
 
   // ========== DEPARTMENTS ==========
   @Get('departments')
-  async getAllDepartments(@CurrentUser() user: JwtPayload) {
-    const data = await this.masterDataService.findAll(
-      'departments',
-      user.workspaceId,
-    );
+  async getAllDepartments() {
+    const data = await this.masterDataService.findAll('departments');
     return { success: true, data };
   }
 
   @Post('departments')
   @Roles('admin')
-  async createDepartment(
-    @CurrentUser() user: JwtPayload,
-    @Body() createDto: CreateMasterDataDto,
-  ) {
-    const data = await this.masterDataService.create(
-      'departments',
-      user.workspaceId,
-      createDto,
-    );
+  async createDepartment(@Body() createDto: CreateMasterDataDto) {
+    const data = await this.masterDataService.create('departments', createDto);
     return { success: true, data, message: 'Department created successfully' };
   }
 
@@ -97,13 +71,11 @@ export class MasterDataController {
   @Roles('admin')
   async updateDepartment(
     @Param('id') id: string,
-    @CurrentUser() user: JwtPayload,
     @Body() updateDto: UpdateMasterDataDto,
   ) {
     const data = await this.masterDataService.update(
       'departments',
       id,
-      user.workspaceId,
       updateDto,
     );
     return { success: true, data, message: 'Department updated successfully' };
@@ -118,22 +90,15 @@ export class MasterDataController {
 
   // ========== LAWS ==========
   @Get('laws')
-  async getAllLaws(@CurrentUser() user: JwtPayload) {
-    const data = await this.masterDataService.findAll('laws', user.workspaceId);
+  async getAllLaws() {
+    const data = await this.masterDataService.findAll('laws');
     return { success: true, data };
   }
 
   @Post('laws')
   @Roles('admin')
-  async createLaw(
-    @CurrentUser() user: JwtPayload,
-    @Body() createDto: CreateMasterDataDto,
-  ) {
-    const data = await this.masterDataService.create(
-      'laws',
-      user.workspaceId,
-      createDto,
-    );
+  async createLaw(@Body() createDto: CreateMasterDataDto) {
+    const data = await this.masterDataService.create('laws', createDto);
     return { success: true, data, message: 'Law created successfully' };
   }
 
@@ -141,15 +106,9 @@ export class MasterDataController {
   @Roles('admin')
   async updateLaw(
     @Param('id') id: string,
-    @CurrentUser() user: JwtPayload,
     @Body() updateDto: UpdateMasterDataDto,
   ) {
-    const data = await this.masterDataService.update(
-      'laws',
-      id,
-      user.workspaceId,
-      updateDto,
-    );
+    const data = await this.masterDataService.update('laws', id, updateDto);
     return { success: true, data, message: 'Law updated successfully' };
   }
 
@@ -162,23 +121,16 @@ export class MasterDataController {
 
   // ========== COMPLIANCES MASTER ==========
   @Get('compliances')
-  async getAllCompliances(@CurrentUser() user: JwtPayload) {
-    const data = await this.masterDataService.findAll(
-      'compliances_master',
-      user.workspaceId,
-    );
+  async getAllCompliances() {
+    const data = await this.masterDataService.findAll('compliances_master');
     return { success: true, data };
   }
 
   @Post('compliances')
   @Roles('admin')
-  async createCompliance(
-    @CurrentUser() user: JwtPayload,
-    @Body() createDto: CreateMasterDataDto,
-  ) {
+  async createCompliance(@Body() createDto: CreateMasterDataDto) {
     const data = await this.masterDataService.create(
       'compliances_master',
-      user.workspaceId,
       createDto,
     );
     return { success: true, data, message: 'Compliance created successfully' };
@@ -188,13 +140,11 @@ export class MasterDataController {
   @Roles('admin')
   async updateCompliance(
     @Param('id') id: string,
-    @CurrentUser() user: JwtPayload,
     @Body() updateDto: UpdateMasterDataDto,
   ) {
     const data = await this.masterDataService.update(
       'compliances_master',
       id,
-      user.workspaceId,
       updateDto,
     );
     return { success: true, data, message: 'Compliance updated successfully' };

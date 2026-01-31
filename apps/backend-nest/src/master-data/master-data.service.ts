@@ -18,27 +18,41 @@ type MasterDataType =
 export class MasterDataService {
   constructor(private prisma: PrismaService) {}
 
-  private getModel(type: MasterDataType) {
-    const models = {
-      entities: this.prisma.entity,
-      departments: this.prisma.department,
-      laws: this.prisma.law,
-      compliances_master: this.prisma.complianceMaster,
-    };
-    return models[type];
-  }
-
-  async findAll(type: MasterDataType, workspaceId: string) {
-    const model = this.getModel(type);
-    return model.findMany({
-      where: { workspaceId },
-      orderBy: { name: 'asc' },
-    });
+  async findAll(type: MasterDataType) {
+    switch (type) {
+      case 'entities':
+        return this.prisma.entity.findMany({ orderBy: { name: 'asc' } });
+      case 'departments':
+        return this.prisma.department.findMany({ orderBy: { name: 'asc' } });
+      case 'laws':
+        return this.prisma.law.findMany({ orderBy: { name: 'asc' } });
+      case 'compliances_master':
+        return this.prisma.complianceMaster.findMany({
+          orderBy: { name: 'asc' },
+          include: { law: true, department: true },
+        });
+    }
   }
 
   async findById(type: MasterDataType, id: string) {
-    const model = this.getModel(type);
-    const item = await model.findUnique({ where: { id } });
+    let item;
+    switch (type) {
+      case 'entities':
+        item = await this.prisma.entity.findUnique({ where: { id } });
+        break;
+      case 'departments':
+        item = await this.prisma.department.findUnique({ where: { id } });
+        break;
+      case 'laws':
+        item = await this.prisma.law.findUnique({ where: { id } });
+        break;
+      case 'compliances_master':
+        item = await this.prisma.complianceMaster.findUnique({
+          where: { id },
+          include: { law: true, department: true },
+        });
+        break;
+    }
 
     if (!item) {
       throw new NotFoundException(`${type} not found`);
@@ -47,67 +61,94 @@ export class MasterDataService {
     return item;
   }
 
-  async findByName(type: MasterDataType, workspaceId: string, name: string) {
-    const model = this.getModel(type);
-    return model.findUnique({
-      where: {
-        workspaceId_name: {
-          workspaceId,
-          name,
-        },
-      },
-    });
+  async findByName(type: MasterDataType, name: string) {
+    switch (type) {
+      case 'entities':
+        return this.prisma.entity.findUnique({ where: { name } });
+      case 'departments':
+        return this.prisma.department.findUnique({ where: { name } });
+      case 'laws':
+        return this.prisma.law.findUnique({ where: { name } });
+      case 'compliances_master':
+        return this.prisma.complianceMaster.findUnique({ where: { name } });
+    }
   }
 
-  async create(
-    type: MasterDataType,
-    workspaceId: string,
-    createDto: CreateMasterDataDto,
-  ) {
+  async create(type: MasterDataType, createDto: CreateMasterDataDto) {
     // Check for duplicates
-    const existing = await this.findByName(type, workspaceId, createDto.name);
+    const existing = await this.findByName(type, createDto.name);
     if (existing) {
       throw new ConflictException(`${type} with this name already exists`);
     }
 
-    const model = this.getModel(type);
-    return model.create({
-      data: {
-        workspaceId,
-        name: createDto.name,
-      },
-    });
+    switch (type) {
+      case 'entities':
+        return this.prisma.entity.create({ data: { name: createDto.name } });
+      case 'departments':
+        return this.prisma.department.create({ data: { name: createDto.name } });
+      case 'laws':
+        return this.prisma.law.create({ data: { name: createDto.name } });
+      case 'compliances_master':
+        // ComplianceMaster requires more fields, not supported by simple create
+        throw new BadRequestException(
+          'Use dedicated compliance master endpoints (not yet implemented)',
+        );
+    }
   }
 
   async update(
     type: MasterDataType,
     id: string,
-    workspaceId: string,
     updateDto: UpdateMasterDataDto,
   ) {
     await this.findById(type, id);
 
     // Check if new name conflicts
     if (updateDto.name) {
-      const existing = await this.findByName(type, workspaceId, updateDto.name);
-      if (existing && existing.id !== id) {
+      const existing = await this.findByName(type, updateDto.name);
+      if (existing && (existing as any).id !== id) {
         throw new ConflictException(`${type} with this name already exists`);
       }
     }
 
-    const model = this.getModel(type);
-    return model.update({
-      where: { id },
-      data: { name: updateDto.name },
-    });
+    switch (type) {
+      case 'entities':
+        return this.prisma.entity.update({
+          where: { id },
+          data: { name: updateDto.name },
+        });
+      case 'departments':
+        return this.prisma.department.update({
+          where: { id },
+          data: { name: updateDto.name },
+        });
+      case 'laws':
+        return this.prisma.law.update({
+          where: { id },
+          data: { name: updateDto.name },
+        });
+      case 'compliances_master':
+        return this.prisma.complianceMaster.update({
+          where: { id },
+          data: { name: updateDto.name },
+        });
+    }
   }
 
   async delete(type: MasterDataType, id: string) {
     await this.findById(type, id);
 
     try {
-      const model = this.getModel(type);
-      return await model.delete({ where: { id } });
+      switch (type) {
+        case 'entities':
+          return await this.prisma.entity.delete({ where: { id } });
+        case 'departments':
+          return await this.prisma.department.delete({ where: { id } });
+        case 'laws':
+          return await this.prisma.law.delete({ where: { id } });
+        case 'compliances_master':
+          return await this.prisma.complianceMaster.delete({ where: { id } });
+      }
     } catch (error: any) {
       // Check if item is in use (foreign key constraint)
       if (error.code === 'P2003') {
@@ -120,11 +161,11 @@ export class MasterDataService {
   }
 
   // Utility for CSV import - creates if doesn't exist
-  async findOrCreate(type: MasterDataType, workspaceId: string, name: string) {
-    let item = await this.findByName(type, workspaceId, name);
+  async findOrCreate(type: MasterDataType, name: string) {
+    let item = await this.findByName(type, name);
 
     if (!item) {
-      item = await this.create(type, workspaceId, { name });
+      item = await this.create(type, { name });
     }
 
     return item;

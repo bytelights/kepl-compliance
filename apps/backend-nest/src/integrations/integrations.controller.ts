@@ -22,23 +22,17 @@ export class IntegrationsController {
 
   // ========== SHAREPOINT ==========
   @Get('sharepoint')
-  async getSharePointConfig(@CurrentUser() user: JwtPayload) {
-    const data = await this.integrationsService.getSharePointConfig(
-      user.workspaceId,
-    );
+  async getSharePointConfig() {
+    const data = await this.integrationsService.getSharePointConfig();
     return { success: true, data };
   }
 
   @Put('sharepoint')
   async updateSharePointConfig(
-    @CurrentUser() user: JwtPayload,
     @Body()
     config: { siteId: string; driveId: string; baseFolderName?: string },
   ) {
-    await this.integrationsService.updateSharePointConfig(
-      user.workspaceId,
-      config,
-    );
+    await this.integrationsService.updateSharePointConfig(config);
     return { success: true, message: 'SharePoint configuration updated' };
   }
 
@@ -50,16 +44,13 @@ export class IntegrationsController {
 
   // ========== TEAMS ==========
   @Get('teams')
-  async getTeamsConfig(@CurrentUser() user: JwtPayload) {
-    const data = await this.integrationsService.getTeamsConfig(
-      user.workspaceId,
-    );
+  async getTeamsConfig() {
+    const data = await this.integrationsService.getTeamsConfig();
     return { success: true, data };
   }
 
   @Put('teams')
   async updateTeamsConfig(
-    @CurrentUser() user: JwtPayload,
     @Body()
     config: {
       webhookUrl: string;
@@ -68,15 +59,13 @@ export class IntegrationsController {
       timezone?: string;
     },
   ) {
-    await this.integrationsService.updateTeamsConfig(user.workspaceId, config);
+    await this.integrationsService.updateTeamsConfig(config);
     return { success: true, message: 'Teams configuration updated' };
   }
 
   @Post('teams/test')
-  async testTeamsWebhook(@CurrentUser() user: JwtPayload) {
-    const config = await this.integrationsService.getTeamsConfig(
-      user.workspaceId,
-    );
+  async testTeamsWebhook() {
+    const config = await this.integrationsService.getTeamsConfig();
 
     if (!config.webhookUrl) {
       return { success: false, message: 'Teams webhook URL not configured' };
@@ -87,8 +76,8 @@ export class IntegrationsController {
   }
 
   @Post('teams/send-report-now')
-  async sendReportNow(@CurrentUser() user: JwtPayload) {
-    await this.reportsService.sendReportNow(user.workspaceId);
+  async sendReportNow() {
+    await this.reportsService.sendReportNow();
     return { success: true, message: 'Report generation triggered' };
   }
 }

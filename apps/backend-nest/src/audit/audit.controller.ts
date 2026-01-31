@@ -14,7 +14,6 @@ export class AuditController {
 
   @Get()
   async findAll(
-    @CurrentUser() user: JwtPayload,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('userId') userId?: string,
@@ -23,7 +22,7 @@ export class AuditController {
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
   ) {
-    const data = await this.auditService.findAll(user.workspaceId, {
+    const data = await this.auditService.findAll({
       page: page ? parseInt(page) : undefined,
       limit: limit ? parseInt(limit) : undefined,
       userId,

@@ -33,10 +33,14 @@ export class AuthService {
     });
   }
 
-  getAuthUrl(): string {
+  async getAuthUrl(): Promise<string> {
     const redirectUri = this.configService.get<string>(
       'MICROSOFT_REDIRECT_URI',
     );
+
+    if (!redirectUri) {
+      throw new Error('MICROSOFT_REDIRECT_URI not configured');
+    }
 
     return this.msalClient.getAuthCodeUrl({
       scopes: ['User.Read'],
@@ -50,6 +54,10 @@ export class AuthService {
     const redirectUri = this.configService.get<string>(
       'MICROSOFT_REDIRECT_URI',
     );
+
+    if (!redirectUri) {
+      throw new Error('MICROSOFT_REDIRECT_URI not configured');
+    }
 
     try {
       // Exchange code for tokens
@@ -69,20 +77,11 @@ export class AuthService {
       const msOid = account.homeAccountId;
 
       // Get or create user
-      const workspaceId = this.configService.get<string>(
-        'DEFAULT_WORKSPACE_ID',
-      );
-
-      if (!workspaceId) {
-        throw new Error('DEFAULT_WORKSPACE_ID not configured');
-      }
-
-      let user = await this.usersService.findByEmail(workspaceId, email);
+      let user = await this.usersService.findByEmail(email);
 
       if (!user) {
         // Create new user with default role
         user = await this.usersService.create({
-          workspaceId,
           email,
           name,
           msOid,
@@ -101,7 +100,6 @@ export class AuthService {
       const payload: JwtPayload = {
         sub: user.id,
         email: user.email,
-        workspaceId: user.workspaceId,
         role: user.role,
       };
 

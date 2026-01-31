@@ -14,28 +14,6 @@ datasource db {
 // CORE TABLES
 // ============================================================================
 
-model Workspace {
-  id        String   @id @default(uuid())
-  name      String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  users              User[]
-  entities           Entity[]
-  departments        Department[]
-  laws               Law[]
-  compliancesMaster  ComplianceMaster[]
-  complianceTasks    ComplianceTask[]
-  evidenceFiles      EvidenceFile[]
-  auditLogs          AuditLog[]
-  csvImportJobs      CsvImportJob[]
-  reportRuns         ReportRun[]
-  configs            Config[]
-
-  @@map("workspaces")
-}
-
 enum UserRole {
   admin
   reviewer
@@ -44,8 +22,7 @@ enum UserRole {
 
 model User {
   id          String    @id @default(uuid())
-  workspaceId String    @map("workspace_id")
-  email       String
+  email       String    @unique
   name        String
   role        UserRole  @default(task_owner)
   msOid       String?   @map("ms_oid") // Microsoft Object ID
@@ -55,15 +32,13 @@ model User {
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  workspace            Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   ownedTasks           ComplianceTask[] @relation("TaskOwner")
   reviewedTasks        ComplianceTask[] @relation("TaskReviewer")
   auditLogs            AuditLog[]
   csvImportJobs        CsvImportJob[]
 
-  @@unique([workspaceId, email])
-  @@index([workspaceId, email])
-  @@index([workspaceId, role])
+  @@index([email])
+  @@index([role])
   @@map("users")
 }
 
@@ -73,65 +48,62 @@ model User {
 
 model Entity {
   id          String   @id @default(uuid())
-  workspaceId String   @map("workspace_id")
-  name        String
+  name        String   @unique
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   complianceTasks ComplianceTask[]
 
-  @@unique([workspaceId, name])
-  @@index([workspaceId])
   @@map("entities")
 }
 
 model Department {
   id          String   @id @default(uuid())
-  workspaceId String   @map("workspace_id")
-  name        String
+  name        String   @unique
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  complianceTasks ComplianceTask[]
+  complianceTasks   ComplianceTask[]
+  complianceMasters ComplianceMaster[]
 
-  @@unique([workspaceId, name])
-  @@index([workspaceId])
   @@map("departments")
 }
 
 model Law {
   id          String   @id @default(uuid())
-  workspaceId String   @map("workspace_id")
-  name        String
+  name        String   @unique
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  complianceTasks ComplianceTask[]
+  complianceTasks   ComplianceTask[]
+  complianceMasters ComplianceMaster[]
 
-  @@unique([workspaceId, name])
-  @@index([workspaceId])
   @@map("laws")
 }
 
 model ComplianceMaster {
-  id          String   @id @default(uuid())
-  workspaceId String   @map("workspace_id")
-  name        String
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id           String         @id @default(uuid())
+  complianceId String         @map("compliance_id")
+  name         String         @unique
+  title        String
+  description  String?
+  lawId        String         @map("law_id")
+  departmentId String         @map("department_id")
+  frequency    TaskFrequency?
+  impact       TaskImpact?
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
 
   // Relations
-  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  law             Law              @relation(fields: [lawId], references: [id], onDelete: Cascade)
+  department      Department       @relation(fields: [departmentId], references: [id], onDelete: Cascade)
   complianceTasks ComplianceTask[]
 
-  @@unique([workspaceId, name])
-  @@index([workspaceId])
+  @@index([lawId])
+  @@index([departmentId])
   @@map("compliances_master")
 }
 
@@ -164,7 +136,6 @@ enum TaskImpact {
 
 model ComplianceTask {
   id                   String         @id @default(uuid())
-  workspaceId          String         @map("workspace_id")
   complianceId         String         @map("compliance_id") // Business ID from CSV
   title                String
   description          String?
@@ -187,7 +158,6 @@ model ComplianceTask {
   updatedAt            DateTime       @updatedAt @map("updated_at")
 
   // Relations
-  workspace         Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   law               Law                @relation(fields: [lawId], references: [id], onDelete: Restrict)
   department        Department         @relation(fields: [departmentId], references: [id], onDelete: Restrict)
   entity            Entity             @relation(fields: [entityId], references: [id], onDelete: Restrict)
@@ -198,12 +168,12 @@ model ComplianceTask {
   taskExecutions    TaskExecution[]
   evidenceFiles     EvidenceFile[]
 
-  @@unique([workspaceId, complianceId, entityId])
-  @@index([workspaceId, status])
-  @@index([workspaceId, ownerId])
-  @@index([workspaceId, reviewerId])
-  @@index([workspaceId, entityId])
-  @@index([workspaceId, dueDate])
+  @@unique([complianceId, entityId])
+  @@index([status])
+  @@index([ownerId])
+  @@index([reviewerId])
+  @@index([entityId])
+  @@index([dueDate])
   @@map("compliance_tasks")
 }
 
@@ -229,7 +199,6 @@ model TaskExecution {
 
 model EvidenceFile {
   id          String   @id @default(uuid())
-  workspaceId String   @map("workspace_id")
   taskId      String   @map("task_id")
   uploadedBy  String   @map("uploaded_by")
   
@@ -246,11 +215,10 @@ model EvidenceFile {
   uploadedAt  DateTime @default(now()) @map("uploaded_at")
 
   // Relations
-  workspace   Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   task        ComplianceTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@unique([taskId, itemId]) // Prevent duplicate uploads
-  @@index([workspaceId, taskId])
+  @@index([taskId])
   @@map("evidence_files")
 }
 
@@ -267,7 +235,6 @@ enum ImportStatus {
 
 model CsvImportJob {
   id            String       @id @default(uuid())
-  workspaceId   String       @map("workspace_id")
   uploadedBy    String       @map("uploaded_by")
   fileName      String       @map("file_name")
   totalRows     Int          @map("total_rows")
@@ -279,12 +246,11 @@ model CsvImportJob {
   completedAt   DateTime?    @map("completed_at")
 
   // Relations
-  workspace     Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   uploader      User              @relation(fields: [uploadedBy], references: [id], onDelete: Restrict)
   rows          CsvImportJobRow[]
 
-  @@index([workspaceId])
-  @@index([workspaceId, createdAt])
+  @@index([uploadedBy])
+  @@index([createdAt])
   @@map("csv_import_jobs")
 }
 
@@ -311,7 +277,6 @@ model CsvImportJobRow {
 
 model AuditLog {
   id          String   @id @default(uuid())
-  workspaceId String   @map("workspace_id")
   userId      String   @map("user_id")
   action      String   // Action type (e.g., 'ROLE_CHANGED', 'TASK_CREATED')
   entityType  String   @map("entity_type") // Entity affected (e.g., 'USER', 'TASK')
@@ -321,12 +286,11 @@ model AuditLog {
   timestamp   DateTime @default(now())
 
   // Relations
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Restrict)
 
-  @@index([workspaceId, timestamp])
-  @@index([workspaceId, userId])
-  @@index([workspaceId, entityType, entityId])
+  @@index([timestamp])
+  @@index([userId])
+  @@index([entityType, entityId])
   @@map("audit_logs")
 }
 
@@ -336,7 +300,6 @@ model AuditLog {
 
 model ReportRun {
   id            String   @id @default(uuid())
-  workspaceId   String   @map("workspace_id")
   reportType    String   @map("report_type") // 'WEEKLY_TEAMS'
   executedAt    DateTime @default(now()) @map("executed_at")
   success       Boolean  @default(true)
@@ -344,10 +307,7 @@ model ReportRun {
   periodStart   DateTime @map("period_start")
   periodEnd     DateTime @map("period_end")
 
-  // Relations
-  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-
-  @@index([workspaceId, reportType, periodStart])
+  @@index([reportType, periodStart])
   @@map("report_runs")
 }
 
@@ -357,17 +317,12 @@ model ReportRun {
 
 model Config {
   id          String   @id @default(uuid())
-  workspaceId String   @map("workspace_id")
-  keyName     String   @map("key_name")
+  keyName     String   @unique @map("key_name")
   value       String   // Encrypted for sensitive values
   active      Boolean  @default(true)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  // Relations
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-
-  @@unique([workspaceId, keyName])
-  @@index([workspaceId, keyName])
+  @@index([keyName])
   @@map("configs")
 }

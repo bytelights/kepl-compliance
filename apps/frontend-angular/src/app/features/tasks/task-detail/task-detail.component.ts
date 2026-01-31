@@ -10,9 +10,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-import { TaskService } from '../../core/services/task.service';
-import { AuthService } from '../../core/services/auth.service';
-import { ComplianceTask } from '../../core/models';
+import { TaskService } from '../../../core/services/task.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { ComplianceTask } from '../../../core/models';
 
 @Component({
   selector: 'app-task-detail',

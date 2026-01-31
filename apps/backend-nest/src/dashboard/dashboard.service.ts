@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 export class DashboardService {
   constructor(private prisma: PrismaService) {}
 
-  async getTaskOwnerDashboard(workspaceId: string, userId: string) {
+  async getTaskOwnerDashboard(userId: string) {
     const today = new Date();
     const next7Days = new Date();
     next7Days.setDate(today.getDate() + 7);
@@ -14,14 +14,12 @@ export class DashboardService {
       await Promise.all([
         this.prisma.complianceTask.count({
           where: {
-            workspaceId,
             ownerId: userId,
             status: 'PENDING',
           },
         }),
         this.prisma.complianceTask.count({
           where: {
-            workspaceId,
             ownerId: userId,
             status: 'PENDING',
             dueDate: { gte: today, lte: next7Days },
@@ -29,7 +27,6 @@ export class DashboardService {
         }),
         this.prisma.complianceTask.count({
           where: {
-            workspaceId,
             ownerId: userId,
             status: 'PENDING',
             dueDate: { lt: today },
@@ -37,7 +34,6 @@ export class DashboardService {
         }),
         this.prisma.complianceTask.findMany({
           where: {
-            workspaceId,
             ownerId: userId,
             status: 'PENDING',
           },
@@ -64,13 +60,12 @@ export class DashboardService {
     };
   }
 
-  async getReviewerDashboard(workspaceId: string) {
+  async getReviewerDashboard() {
     const today = new Date();
 
     // Entity-wise stats
     const entityStats = await this.prisma.complianceTask.groupBy({
       by: ['entityId'],
-      where: { workspaceId },
       _count: { _all: true },
     });
 
@@ -79,18 +74,16 @@ export class DashboardService {
         const [entity, pending, completed, overdue] = await Promise.all([
           this.prisma.entity.findUnique({ where: { id: stat.entityId } }),
           this.prisma.complianceTask.count({
-            where: { workspaceId, entityId: stat.entityId, status: 'PENDING' },
+            where: { entityId: stat.entityId, status: 'PENDING' },
           }),
           this.prisma.complianceTask.count({
             where: {
-              workspaceId,
               entityId: stat.entityId,
               status: 'COMPLETED',
             },
           }),
           this.prisma.complianceTask.count({
             where: {
-              workspaceId,
               entityId: stat.entityId,
               status: 'PENDING',
               dueDate: { lt: today },
@@ -112,7 +105,6 @@ export class DashboardService {
     // Department-wise stats
     const departmentStats = await this.prisma.complianceTask.groupBy({
       by: ['departmentId'],
-      where: { workspaceId },
       _count: { _all: true },
     });
 
@@ -124,21 +116,18 @@ export class DashboardService {
           }),
           this.prisma.complianceTask.count({
             where: {
-              workspaceId,
               departmentId: stat.departmentId,
               status: 'PENDING',
             },
           }),
           this.prisma.complianceTask.count({
             where: {
-              workspaceId,
               departmentId: stat.departmentId,
               status: 'COMPLETED',
             },
           }),
           this.prisma.complianceTask.count({
             where: {
-              workspaceId,
               departmentId: stat.departmentId,
               status: 'PENDING',
               dueDate: { lt: today },
@@ -160,7 +149,6 @@ export class DashboardService {
     // Overdue tasks
     const overdueTasks = await this.prisma.complianceTask.findMany({
       where: {
-        workspaceId,
         status: 'PENDING',
         dueDate: { lt: today },
       },
@@ -182,7 +170,7 @@ export class DashboardService {
     };
   }
 
-  async getAdminDashboard(workspaceId: string) {
+  async getAdminDashboard() {
     const today = new Date();
 
     const [
@@ -193,23 +181,21 @@ export class DashboardService {
       totalUsers,
       recentImports,
     ] = await Promise.all([
-      this.prisma.complianceTask.count({ where: { workspaceId } }),
+      this.prisma.complianceTask.count(),
       this.prisma.complianceTask.count({
-        where: { workspaceId, status: 'PENDING' },
+        where: { status: 'PENDING' },
       }),
       this.prisma.complianceTask.count({
-        where: { workspaceId, status: 'COMPLETED' },
+        where: { status: 'COMPLETED' },
       }),
       this.prisma.complianceTask.count({
         where: {
-          workspaceId,
           status: 'PENDING',
           dueDate: { lt: today },
         },
       }),
-      this.prisma.user.count({ where: { workspaceId, isActive: true } }),
+      this.prisma.user.count({ where: { isActive: true } }),
       this.prisma.csvImportJob.findMany({
-        where: { workspaceId },
         orderBy: { createdAt: 'desc' },
         take: 5,
         include: {

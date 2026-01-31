@@ -221,7 +221,7 @@ export class TaskCreateComponent implements OnInit {
 
     this.taskService.createTask(taskData).subscribe({
       next: (response) => {
-        if (response.success) {
+        if (response.success && response.data?.id) {
           this.snackBar.open('Task created successfully', 'Close', {
             duration: 3000,
           });

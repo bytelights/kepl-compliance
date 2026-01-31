@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface AuditLogData {
-  workspaceId: string;
   userId: string;
   action: string;
   entityType: string;
@@ -19,7 +18,6 @@ export class AuditService {
     try {
       await this.prisma.auditLog.create({
         data: {
-          workspaceId: data.workspaceId,
           userId: data.userId,
           action: data.action,
           entityType: data.entityType,
@@ -35,7 +33,6 @@ export class AuditService {
   }
 
   async findAll(
-    workspaceId: string,
     options: {
       page?: number;
       limit?: number;
@@ -49,7 +46,7 @@ export class AuditService {
     const { page = 1, limit = 50, ...filters } = options;
     const skip = (page - 1) * limit;
 
-    const where: any = { workspaceId };
+    const where: any = {};
 
     if (filters.userId) where.userId = filters.userId;
     if (filters.action)
@@ -91,14 +88,12 @@ export class AuditService {
 
   // Helper methods for common audit actions
   async logUserRoleChange(
-    workspaceId: string,
     performedBy: string,
     userId: string,
     oldRole: string,
     newRole: string,
   ) {
     await this.log({
-      workspaceId,
       userId: performedBy,
       action: 'USER_ROLE_CHANGED',
       entityType: 'USER',
@@ -107,14 +102,8 @@ export class AuditService {
     });
   }
 
-  async logTaskCreated(
-    workspaceId: string,
-    userId: string,
-    taskId: string,
-    taskData: any,
-  ) {
+  async logTaskCreated(userId: string, taskId: string, taskData: any) {
     await this.log({
-      workspaceId,
       userId,
       action: 'TASK_CREATED',
       entityType: 'TASK',
@@ -123,14 +112,8 @@ export class AuditService {
     });
   }
 
-  async logTaskUpdated(
-    workspaceId: string,
-    userId: string,
-    taskId: string,
-    changes: any,
-  ) {
+  async logTaskUpdated(userId: string, taskId: string, changes: any) {
     await this.log({
-      workspaceId,
       userId,
       action: 'TASK_UPDATED',
       entityType: 'TASK',
@@ -139,14 +122,8 @@ export class AuditService {
     });
   }
 
-  async logTaskCompleted(
-    workspaceId: string,
-    userId: string,
-    taskId: string,
-    comment: string,
-  ) {
+  async logTaskCompleted(userId: string, taskId: string, comment: string) {
     await this.log({
-      workspaceId,
       userId,
       action: 'TASK_COMPLETED',
       entityType: 'TASK',
@@ -155,14 +132,8 @@ export class AuditService {
     });
   }
 
-  async logTaskSkipped(
-    workspaceId: string,
-    userId: string,
-    taskId: string,
-    remarks: string,
-  ) {
+  async logTaskSkipped(userId: string, taskId: string, remarks: string) {
     await this.log({
-      workspaceId,
       userId,
       action: 'TASK_SKIPPED',
       entityType: 'TASK',
@@ -171,14 +142,8 @@ export class AuditService {
     });
   }
 
-  async logEvidenceUploaded(
-    workspaceId: string,
-    userId: string,
-    taskId: string,
-    fileName: string,
-  ) {
+  async logEvidenceUploaded(userId: string, taskId: string, fileName: string) {
     await this.log({
-      workspaceId,
       userId,
       action: 'EVIDENCE_UPLOADED',
       entityType: 'EVIDENCE',
@@ -187,15 +152,8 @@ export class AuditService {
     });
   }
 
-  async logCsvImport(
-    workspaceId: string,
-    userId: string,
-    jobId: string,
-    mode: string,
-    result: any,
-  ) {
+  async logCsvImport(userId: string, jobId: string, mode: string, result: any) {
     await this.log({
-      workspaceId,
       userId,
       action: `CSV_IMPORT_${mode.toUpperCase()}`,
       entityType: 'CSV_IMPORT',
@@ -205,7 +163,6 @@ export class AuditService {
   }
 
   async logMasterDataChange(
-    workspaceId: string,
     userId: string,
     action: string,
     type: string,
@@ -213,7 +170,6 @@ export class AuditService {
     changes?: any,
   ) {
     await this.log({
-      workspaceId,
       userId,
       action: `MASTER_DATA_${action}`,
       entityType: type.toUpperCase(),

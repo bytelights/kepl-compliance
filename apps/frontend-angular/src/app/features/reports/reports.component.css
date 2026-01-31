@@ -56,7 +56,6 @@ mat-card-header mat-card-title {
 }
 
 .report-card mat-card-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   padding: 24px;
   margin: -16px -16px 16px -16px;
@@ -109,7 +108,7 @@ mat-card-header mat-card-title {
 }
 
 .features-list li::before {
-  content: "✓";
+  content: '✓';
   color: #4caf50;
   font-weight: bold;
   margin-right: 8px;

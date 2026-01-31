@@ -1,0 +1,244 @@
+// Database Schema for dbdiagram.io
+// Visit https://dbdiagram.io/d and paste this code to see visual diagram
+
+Table users {
+  id uuid [pk, default: `gen_random_uuid()`]
+  email varchar(255) [not null, unique]
+  name varchar(255) [not null]
+  role user_role [not null, default: 'task_owner']
+  msOid varchar(255) [null]
+  isActive boolean [not null, default: true]
+  lastLoginAt timestamp [null]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null, default: `now()`]
+  
+  indexes {
+    email
+    role
+  }
+}
+
+Table entities {
+  id uuid [pk, default: `gen_random_uuid()`]
+  name varchar(255) [not null, unique]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null, default: `now()`]
+  
+  indexes {
+    name
+  }
+}
+
+Table departments {
+  id uuid [pk, default: `gen_random_uuid()`]
+  name varchar(255) [not null, unique]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null, default: `now()`]
+  
+  indexes {
+    name
+  }
+}
+
+Table laws {
+  id uuid [pk, default: `gen_random_uuid()`]
+  name varchar(255) [not null, unique]
+  description text [null]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null, default: `now()`]
+  
+  indexes {
+    name
+  }
+}
+
+Table compliances_master {
+  id uuid [pk, default: `gen_random_uuid()`]
+  complianceId varchar(100) [not null]
+  name varchar(255) [not null, unique]
+  title varchar(255) [not null]
+  description text [null]
+  lawId uuid [not null, ref: > laws.id]
+  departmentId uuid [not null, ref: > departments.id]
+  frequency frequency_enum [not null]
+  impact impact_enum [null]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null, default: `now()`]
+  
+  indexes {
+    name
+    lawId
+    departmentId
+  }
+}
+
+Table compliance_tasks {
+  id uuid [pk, default: `gen_random_uuid()`]
+  complianceId varchar(100) [not null]
+  title varchar(255) [not null]
+  description text [null]
+  status task_status [not null, default: 'PENDING']
+  dueDate date [null]
+  completedAt timestamp [null]
+  skippedAt timestamp [null]
+  lawId uuid [not null, ref: > laws.id]
+  departmentId uuid [not null, ref: > departments.id]
+  entityId uuid [not null, ref: > entities.id]
+  ownerId uuid [not null, ref: > users.id]
+  reviewerId uuid [not null, ref: > users.id]
+  complianceMasterId uuid [null, ref: > compliances_master.id]
+  frequency varchar(50) [null]
+  impact varchar(50) [null]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null, default: `now()`]
+  
+  indexes {
+    status
+    ownerId
+    reviewerId
+    entityId
+    dueDate
+    createdAt
+    (complianceId, entityId) [unique]
+  }
+}
+
+Table evidence_files {
+  id uuid [pk, default: `gen_random_uuid()`]
+  taskId uuid [not null, ref: > compliance_tasks.id]
+  fileName varchar(255) [not null]
+  fileSize bigint [not null]
+  mimeType varchar(100) [not null]
+  sharepointFileId varchar(255) [not null]
+  sharepointWebUrl varchar(500) [not null]
+  uploadedById uuid [not null, ref: > users.id]
+  uploadedAt timestamp [not null, default: `now()`]
+  
+  indexes {
+    taskId
+    uploadedById
+    uploadedAt
+  }
+}
+
+Table csv_import_jobs {
+  id uuid [pk, default: `gen_random_uuid()`]
+  fileName varchar(255) [not null]
+  totalRows int [not null, default: 0]
+  validRows int [not null, default: 0]
+  errorRows int [not null, default: 0]
+  status import_status [not null, default: 'PENDING']
+  mode import_mode [not null]
+  uploadedBy uuid [not null, ref: > users.id]
+  createdAt timestamp [not null, default: `now()`]
+  
+  indexes {
+    uploadedBy
+    createdAt
+  }
+}
+
+Table csv_import_job_rows {
+  id uuid [pk, default: `gen_random_uuid()`]
+  jobId uuid [not null, ref: > csv_import_jobs.id]
+  rowNumber int [not null]
+  isValid boolean [not null]
+  errorMessage text [null]
+  rowData jsonb [not null]
+  createdAt timestamp [not null, default: `now()`]
+  
+  indexes {
+    jobId
+    isValid
+  }
+}
+
+Table audit_logs {
+  id uuid [pk, default: `gen_random_uuid()`]
+  userId uuid [not null, ref: > users.id]
+  action varchar(100) [not null]
+  entityType varchar(100) [not null]
+  entityId varchar(255) [null]
+  changes jsonb [null]
+  ipAddress varchar(45) [null]
+  userAgent varchar(500) [null]
+  timestamp timestamp [not null, default: `now()`]
+  
+  indexes {
+    timestamp
+    userId
+    (entityType, entityId)
+  }
+}
+
+Table report_runs {
+  id uuid [pk, default: `gen_random_uuid()`]
+  reportType varchar(100) [not null]
+  periodStart date [not null]
+  periodEnd date [not null]
+  status report_status [not null]
+  errorMessage text [null]
+  metadata jsonb [null]
+  createdAt timestamp [not null, default: `now()`]
+  
+  indexes {
+    (reportType, periodStart)
+    createdAt
+  }
+}
+
+Table configs {
+  id uuid [pk, default: `gen_random_uuid()`]
+  keyName varchar(100) [not null, unique]
+  value text [not null]
+  active boolean [not null, default: true]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null, default: `now()`]
+  
+  indexes {
+    keyName
+  }
+}
+
+// Enums
+Enum user_role {
+  admin
+  reviewer
+  task_owner
+}
+
+Enum task_status {
+  PENDING
+  COMPLETED
+  SKIPPED
+}
+
+Enum frequency_enum {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+Enum impact_enum {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+Enum import_status {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+Enum import_mode {
+  PREVIEW
+  COMMIT
+}
+
+Enum report_status {
+  SUCCESS
+  FAILED
+}

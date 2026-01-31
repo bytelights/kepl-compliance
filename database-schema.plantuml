@@ -1,0 +1,231 @@
+@startuml Compliance_Management_Database
+
+' ========================================
+' COMPLIANCE MANAGEMENT SYSTEM - ERD
+' ByteLights Private Limited
+' ========================================
+
+!define TABLE(x) class x << (T,#FFAAAA) >>
+!define PK(x) <u>x</u>
+!define FK(x) x
+
+skinparam linetype ortho
+skinparam roundcorner 10
+skinparam class {
+    BackgroundColor WhiteSmoke
+    BorderColor DarkGray
+    ArrowColor DarkSlateGray
+}
+
+' ========================================
+' CORE TABLES
+' ========================================
+
+TABLE(users) {
+    PK(id): UUID
+    --
+    email: VARCHAR(255) {UNIQUE}
+    name: VARCHAR(255)
+    role: ENUM
+    msOid: VARCHAR(255)
+    isActive: BOOLEAN
+    lastLoginAt: TIMESTAMP
+    createdAt: TIMESTAMP
+    updatedAt: TIMESTAMP
+}
+
+TABLE(entities) {
+    PK(id): UUID
+    --
+    name: VARCHAR(255) {UNIQUE}
+    createdAt: TIMESTAMP
+    updatedAt: TIMESTAMP
+}
+
+TABLE(departments) {
+    PK(id): UUID
+    --
+    name: VARCHAR(255) {UNIQUE}
+    createdAt: TIMESTAMP
+    updatedAt: TIMESTAMP
+}
+
+TABLE(laws) {
+    PK(id): UUID
+    --
+    name: VARCHAR(255) {UNIQUE}
+    description: TEXT
+    createdAt: TIMESTAMP
+    updatedAt: TIMESTAMP
+}
+
+TABLE(compliances_master) {
+    PK(id): UUID
+    --
+    complianceId: VARCHAR(100)
+    name: VARCHAR(255) {UNIQUE}
+    title: VARCHAR(255)
+    description: TEXT
+    FK(lawId): UUID
+    FK(departmentId): UUID
+    frequency: ENUM
+    impact: ENUM
+    createdAt: TIMESTAMP
+    updatedAt: TIMESTAMP
+}
+
+TABLE(compliance_tasks) {
+    PK(id): UUID
+    --
+    complianceId: VARCHAR(100)
+    title: VARCHAR(255)
+    description: TEXT
+    status: ENUM
+    dueDate: DATE
+    completedAt: TIMESTAMP
+    skippedAt: TIMESTAMP
+    FK(lawId): UUID
+    FK(departmentId): UUID
+    FK(entityId): UUID
+    FK(ownerId): UUID
+    FK(reviewerId): UUID
+    FK(complianceMasterId): UUID
+    frequency: VARCHAR(50)
+    impact: VARCHAR(50)
+    createdAt: TIMESTAMP
+    updatedAt: TIMESTAMP
+}
+
+TABLE(evidence_files) {
+    PK(id): UUID
+    --
+    FK(taskId): UUID
+    fileName: VARCHAR(255)
+    fileSize: BIGINT
+    mimeType: VARCHAR(100)
+    sharepointFileId: VARCHAR(255)
+    sharepointWebUrl: VARCHAR(500)
+    FK(uploadedById): UUID
+    uploadedAt: TIMESTAMP
+}
+
+TABLE(csv_import_jobs) {
+    PK(id): UUID
+    --
+    fileName: VARCHAR(255)
+    totalRows: INT
+    validRows: INT
+    errorRows: INT
+    status: ENUM
+    mode: ENUM
+    FK(uploadedBy): UUID
+    createdAt: TIMESTAMP
+}
+
+TABLE(csv_import_job_rows) {
+    PK(id): UUID
+    --
+    FK(jobId): UUID
+    rowNumber: INT
+    isValid: BOOLEAN
+    errorMessage: TEXT
+    rowData: JSONB
+    createdAt: TIMESTAMP
+}
+
+TABLE(audit_logs) {
+    PK(id): UUID
+    --
+    FK(userId): UUID
+    action: VARCHAR(100)
+    entityType: VARCHAR(100)
+    entityId: VARCHAR(255)
+    changes: JSONB
+    ipAddress: VARCHAR(45)
+    userAgent: VARCHAR(500)
+    timestamp: TIMESTAMP
+}
+
+TABLE(report_runs) {
+    PK(id): UUID
+    --
+    reportType: VARCHAR(100)
+    periodStart: DATE
+    periodEnd: DATE
+    status: ENUM
+    errorMessage: TEXT
+    metadata: JSONB
+    createdAt: TIMESTAMP
+}
+
+TABLE(configs) {
+    PK(id): UUID
+    --
+    keyName: VARCHAR(100) {UNIQUE}
+    value: TEXT
+    active: BOOLEAN
+    createdAt: TIMESTAMP
+    updatedAt: TIMESTAMP
+}
+
+' ========================================
+' RELATIONSHIPS
+' ========================================
+
+' User relationships
+users ||--o{ compliance_tasks : "owns (ownerId)"
+users ||--o{ compliance_tasks : "reviews (reviewerId)"
+users ||--o{ evidence_files : "uploads"
+users ||--o{ csv_import_jobs : "uploads"
+users ||--o{ audit_logs : "actions"
+
+' Entity relationships
+entities ||--o{ compliance_tasks : "has"
+
+' Department relationships
+departments ||--o{ compliance_tasks : "responsible"
+departments ||--o{ compliances_master : "owns"
+
+' Law relationships
+laws ||--o{ compliance_tasks : "governs"
+laws ||--o{ compliances_master : "governs"
+
+' Compliance Master relationships
+compliances_master ||--o{ compliance_tasks : "template"
+
+' Task relationships
+compliance_tasks ||--o{ evidence_files : "has evidence"
+
+' CSV Import relationships
+csv_import_jobs ||--o{ csv_import_job_rows : "contains"
+
+' ========================================
+' NOTES
+' ========================================
+
+note right of users
+  **RBAC Roles:**
+  - admin: Full access
+  - reviewer: View + review
+  - task_owner: Assigned tasks only
+end note
+
+note right of compliance_tasks
+  **Core Business Table**
+  Status: PENDING → COMPLETED/SKIPPED
+  Overdue = dueDate < today & status = PENDING
+  UNIQUE(complianceId, entityId)
+end note
+
+note right of compliances_master
+  **Template Library**
+  Used to create tasks efficiently
+  Standardizes compliance requirements
+end note
+
+note bottom of evidence_files
+  Files stored in SharePoint
+  Only metadata in database
+end note
+
+@enduml

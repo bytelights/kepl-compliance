@@ -4,7 +4,6 @@ export interface User {
   email: string;
   name: string;
   role: 'admin' | 'reviewer' | 'task_owner';
-  workspaceId: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -14,20 +13,17 @@ export interface User {
 export interface Entity {
   id: string;
   name: string;
-  workspaceId: string;
 }
 
 export interface Department {
   id: string;
   name: string;
-  workspaceId: string;
 }
 
 export interface Law {
   id: string;
   name: string;
   description?: string;
-  workspaceId: string;
 }
 
 export interface ComplianceMaster {
@@ -39,7 +35,6 @@ export interface ComplianceMaster {
   departmentId: string;
   frequency: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
   impact?: 'HIGH' | 'MEDIUM' | 'LOW';
-  workspaceId: string;
   law?: Law;
   department?: Department;
 }
@@ -61,7 +56,6 @@ export interface ComplianceTask {
   reviewerId: string;
   frequency: string;
   impact?: string;
-  workspaceId: string;
   createdAt: string;
   updatedAt: string;
   law?: Law;
@@ -96,7 +90,6 @@ export interface CsvImportJob {
   status: 'PENDING' | 'COMPLETED' | 'FAILED';
   mode: 'PREVIEW' | 'COMMIT';
   uploaderId: string;
-  workspaceId: string;
   createdAt: string;
   uploader?: User;
   rows?: CsvImportJobRow[];
