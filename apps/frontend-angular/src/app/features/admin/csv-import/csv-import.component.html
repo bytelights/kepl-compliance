@@ -1,0 +1,146 @@
+<div class="page-wrapper">
+  <div class="page-container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1>CSV Bulk Import</h1>
+      <p class="page-subtitle">Import compliance tasks from CSV files</p>
+    </div>
+
+    <!-- Upload Card -->
+    <mat-card class="content-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>cloud_upload</mat-icon>
+          Upload CSV File
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="upload-area" (click)="fileInput.click()" [class.uploading]="uploading">
+          <mat-icon>cloud_upload</mat-icon>
+          <p>Click to select CSV file</p>
+          <span class="upload-hint">Supported format: .csv</span>
+          <input
+            #fileInput
+            type="file"
+            accept=".csv"
+            (change)="onFileSelected($event)"
+            style="display: none"
+          />
+        </div>
+
+        <div *ngIf="selectedFile" class="file-info">
+          <mat-icon>description</mat-icon>
+          <span>{{ selectedFile.name }}</span>
+          <button mat-icon-button (click)="clearFile()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <div class="action-buttons" *ngIf="selectedFile && !uploading">
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="preview()"
+          >
+            <mat-icon>visibility</mat-icon>
+            Preview
+          </button>
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="commit()"
+          >
+            <mat-icon>check</mat-icon>
+            Import
+          </button>
+        </div>
+
+        <div *ngIf="uploading" class="upload-progress">
+          <mat-spinner diameter="40"></mat-spinner>
+          <p>Processing CSV file...</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Import History -->
+    <mat-card class="content-card">
+      <mat-card-header>
+        <mat-card-title>Import History</mat-card-title>
+        <button mat-icon-button (click)="loadHistory()" matTooltip="Refresh">
+          <mat-icon>refresh</mat-icon>
+        </button>
+      </mat-card-header>
+      <mat-card-content>
+        <div *ngIf="loadingHistory" class="loading-container">
+          <mat-spinner></mat-spinner>
+        </div>
+
+        <div *ngIf="!loadingHistory && importHistory.length === 0" class="empty-state">
+          <mat-icon>history</mat-icon>
+          <p>No import history</p>
+        </div>
+
+        <div *ngIf="!loadingHistory && importHistory.length > 0" class="table-container">
+          <table mat-table [dataSource]="importHistory">
+            <ng-container matColumnDef="fileName">
+              <th mat-header-cell *matHeaderCellDef>File Name</th>
+              <td mat-cell *matCellDef="let job">{{ job.fileName }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="mode">
+              <th mat-header-cell *matHeaderCellDef>Mode</th>
+              <td mat-cell *matCellDef="let job">
+                <span class="status-badge" [class]="'mode-' + job.mode">{{ job.mode }}</span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>Status</th>
+              <td mat-cell *matCellDef="let job">
+                <span class="status-badge" [class]="'status-' + job.status">{{ job.status }}</span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="rows">
+              <th mat-header-cell *matHeaderCellDef>Rows</th>
+              <td mat-cell *matCellDef="let job">
+                Total: {{ job.totalRows }} | Valid: {{ job.validRows }} | Errors: {{ job.errorRows }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="uploader">
+              <th mat-header-cell *matHeaderCellDef>Uploader</th>
+              <td mat-cell *matCellDef="let job">{{ job.uploader?.name }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="createdAt">
+              <th mat-header-cell *matHeaderCellDef>Date</th>
+              <td mat-cell *matCellDef="let job">{{ job.createdAt | date: 'MMM d, y h:mm a' }}</td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+          </table>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Help Card -->
+    <mat-card class="help-card">
+      <mat-card-content>
+        <div class="help-content">
+          <mat-icon>help_outline</mat-icon>
+          <div>
+            <h3>CSV Import Instructions</h3>
+            <ul>
+              <li><strong>Preview Mode:</strong> Validates the CSV without creating tasks. Use this to check for errors first</li>
+              <li><strong>Import Mode:</strong> Creates tasks in the database. Make sure to preview first</li>
+              <li><strong>Required Columns:</strong> complianceId, title, entityId, departmentId, lawId, ownerId, reviewerId, dueDate</li>
+              <li><strong>Optional Columns:</strong> description, frequency, impact, status</li>
+            </ul>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

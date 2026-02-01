@@ -1,183 +1,377 @@
-<mat-toolbar color="primary">
-  <span>Compliance Management System</span>
-  <span class="spacer"></span>
-  <span>{{ user?.name || user?.email }}</span>
-  <button mat-icon-button (click)="logout()">
-    <mat-icon>logout</mat-icon>
-  </button>
-</mat-toolbar>
-
-<div class="dashboard-container">
-  <div class="dashboard-header">
-    <h1>Dashboard</h1>
-    <p class="subtitle">Welcome back, {{ user?.name }}!</p>
-  </div>
-
+<div class="dashboard-wrapper">
   <!-- Loading State -->
   <div *ngIf="loading" class="loading-container">
     <mat-spinner></mat-spinner>
   </div>
 
-  <!-- Task Owner Dashboard -->
-  <div *ngIf="!loading && isTaskOwner()" class="dashboard-content">
-    <div class="stats-grid">
-      <mat-card class="stat-card pending">
+  <!-- Dashboard Content -->
+  <div *ngIf="!loading" class="dashboard-container">
+    
+    <!-- Page Header -->
+    <div class="page-header">
+      <div>
+        <h1>Dashboard</h1>
+        <p class="page-subtitle">Welcome back, {{ user?.name }}</p>
+      </div>
+    </div>
+
+    <!-- Task Owner Dashboard -->
+    <div *ngIf="isTaskOwner()" class="dashboard-content">
+      <!-- Stats Cards -->
+      <div class="stats-grid">
+        <mat-card class="stat-card">
+          <mat-card-content>
+            <div class="stat-content">
+              <div class="stat-info">
+                <div class="stat-label">Pending Tasks</div>
+                <div class="stat-value">{{ taskOwnerData?.pendingCount || 0 }}</div>
+              </div>
+              <div class="stat-icon pending">
+                <mat-icon>assignment</mat-icon>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="stat-card">
+          <mat-card-content>
+            <div class="stat-content">
+              <div class="stat-info">
+                <div class="stat-label">Due This Week</div>
+                <div class="stat-value">{{ taskOwnerData?.dueThisWeekCount || 0 }}</div>
+              </div>
+              <div class="stat-icon warning">
+                <mat-icon>schedule</mat-icon>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="stat-card">
+          <mat-card-content>
+            <div class="stat-content">
+              <div class="stat-info">
+                <div class="stat-label">Overdue</div>
+                <div class="stat-value">{{ taskOwnerData?.overdueCount || 0 }}</div>
+              </div>
+              <div class="stat-icon danger">
+                <mat-icon>warning</mat-icon>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Task Status Chart -->
+      <mat-card class="content-card chart-card">
+        <mat-card-header>
+          <mat-card-title>Task Distribution</mat-card-title>
+        </mat-card-header>
         <mat-card-content>
-          <div class="stat-icon"><mat-icon>assignment</mat-icon></div>
-          <div class="stat-value">{{ taskOwnerData?.pendingCount || 0 }}</div>
-          <div class="stat-label">Pending Tasks</div>
+          <div class="chart-container">
+            <canvas baseChart
+              [type]="doughnutChartType"
+              [data]="taskOwnerChartData"
+              [options]="chartOptions">
+            </canvas>
+          </div>
         </mat-card-content>
       </mat-card>
 
-      <mat-card class="stat-card warning">
+      <!-- Recent Tasks Table -->
+      <mat-card class="content-card">
+        <mat-card-header>
+          <mat-card-title>Recent Tasks</mat-card-title>
+        </mat-card-header>
         <mat-card-content>
-          <div class="stat-icon"><mat-icon>schedule</mat-icon></div>
-          <div class="stat-value">{{ taskOwnerData?.dueThisWeekCount || 0 }}</div>
-          <div class="stat-label">Due This Week</div>
-        </mat-card-content>
-      </mat-card>
+          <div *ngIf="!taskOwnerData?.recentTasks?.length" class="empty-state">
+            <mat-icon>check_circle</mat-icon>
+            <p>No pending tasks</p>
+          </div>
 
-      <mat-card class="stat-card danger">
-        <mat-card-content>
-          <div class="stat-icon"><mat-icon>warning</mat-icon></div>
-          <div class="stat-value">{{ taskOwnerData?.overdueCount || 0 }}</div>
-          <div class="stat-label">Overdue</div>
+          <div *ngIf="taskOwnerData?.recentTasks?.length" class="table-container">
+            <table mat-table [dataSource]="taskOwnerData?.recentTasks || []">
+              <ng-container matColumnDef="complianceId">
+                <th mat-header-cell *matHeaderCellDef>ID</th>
+                <td mat-cell *matCellDef="let task">{{ task.complianceId }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="title">
+                <th mat-header-cell *matHeaderCellDef>Title</th>
+                <td mat-cell *matCellDef="let task">{{ task.title }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="entity">
+                <th mat-header-cell *matHeaderCellDef>Entity</th>
+                <td mat-cell *matCellDef="let task">{{ task.entity?.name }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="dueDate">
+                <th mat-header-cell *matHeaderCellDef>Due Date</th>
+                <td mat-cell *matCellDef="let task">
+                  <span [class.overdue]="isOverdue(task.dueDate)">
+                    {{ task.dueDate | date: 'MMM d, y' }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef>Status</th>
+                <td mat-cell *matCellDef="let task">
+                  <span class="status-badge" [class]="'status-' + task.status">{{ task.status }}</span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef>Actions</th>
+                <td mat-cell *matCellDef="let task">
+                  <button mat-button color="primary" [routerLink]="['/tasks', task.id]">
+                    View
+                  </button>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="taskColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: taskColumns"></tr>
+            </table>
+          </div>
+
+          <div class="card-actions" *ngIf="taskOwnerData?.recentTasks?.length">
+            <button mat-raised-button color="primary" routerLink="/tasks">
+              View All Tasks
+            </button>
+          </div>
         </mat-card-content>
       </mat-card>
     </div>
 
-    <!-- Recent Tasks -->
-    <mat-card class="recent-tasks-card">
-      <mat-card-header>
-        <mat-card-title>Your Recent Tasks</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <div *ngIf="!taskOwnerData?.recentTasks?.length" class="empty-state">
-          <mat-icon>check_circle</mat-icon>
-          <p>No pending tasks. Great job!</p>
-        </div>
+    <!-- Reviewer/Admin Dashboard -->
+    <div *ngIf="isReviewer() || isAdmin()" class="dashboard-content">
+      <!-- Admin Stats -->
+      <div *ngIf="isAdmin() && adminData" class="stats-grid">
+        <mat-card class="stat-card">
+          <mat-card-content>
+            <div class="stat-content">
+              <div class="stat-info">
+                <div class="stat-label">Total Tasks</div>
+                <div class="stat-value">{{ adminData.totalTasks }}</div>
+              </div>
+              <div class="stat-icon primary">
+                <mat-icon>assignment</mat-icon>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
 
-        <table mat-table [dataSource]="taskOwnerData?.recentTasks || []" *ngIf="taskOwnerData?.recentTasks?.length">
-          <ng-container matColumnDef="complianceId">
-            <th mat-header-cell *matHeaderCellDef>ID</th>
-            <td mat-cell *matCellDef="let task">{{ task.complianceId }}</td>
-          </ng-container>
+        <mat-card class="stat-card">
+          <mat-card-content>
+            <div class="stat-content">
+              <div class="stat-info">
+                <div class="stat-label">Pending</div>
+                <div class="stat-value">{{ adminData.pendingTasks }}</div>
+              </div>
+              <div class="stat-icon pending">
+                <mat-icon>pending_actions</mat-icon>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
 
-          <ng-container matColumnDef="title">
-            <th mat-header-cell *matHeaderCellDef>Title</th>
-            <td mat-cell *matCellDef="let task">{{ task.title }}</td>
-          </ng-container>
+        <mat-card class="stat-card">
+          <mat-card-content>
+            <div class="stat-content">
+              <div class="stat-info">
+                <div class="stat-label">Completed</div>
+                <div class="stat-value">{{ adminData.completedTasks }}</div>
+              </div>
+              <div class="stat-icon success">
+                <mat-icon>check_circle</mat-icon>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
 
-          <ng-container matColumnDef="entity">
-            <th mat-header-cell *matHeaderCellDef>Entity</th>
-            <td mat-cell *matCellDef="let task">{{ task.entity?.name }}</td>
-          </ng-container>
+        <mat-card class="stat-card">
+          <mat-card-content>
+            <div class="stat-content">
+              <div class="stat-info">
+                <div class="stat-label">Overdue</div>
+                <div class="stat-value">{{ adminData.overdueTasks }}</div>
+              </div>
+              <div class="stat-icon danger">
+                <mat-icon>warning</mat-icon>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
 
-          <ng-container matColumnDef="dueDate">
-            <th mat-header-cell *matHeaderCellDef>Due Date</th>
-            <td mat-cell *matCellDef="let task">
-              <span [class.overdue]="isOverdue(task.dueDate)">
-                {{ task.dueDate | date: 'MMM d, y' }}
-              </span>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef>Status</th>
-            <td mat-cell *matCellDef="let task">
-              <mat-chip [class]="'status-' + task.status">{{ task.status }}</mat-chip>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef>Actions</th>
-            <td mat-cell *matCellDef="let task">
-              <button mat-button color="primary" [routerLink]="['/tasks', task.id]">
-                View
-              </button>
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="taskColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: taskColumns"></tr>
-        </table>
-
-        <div class="view-all-btn" *ngIf="taskOwnerData?.recentTasks?.length">
-          <button mat-raised-button color="primary" routerLink="/tasks">
-            View All Tasks
-          </button>
-        </div>
-      </mat-card-content>
-    </mat-card>
-  </div>
-
-  <!-- Reviewer/Admin Dashboard -->
-  <div *ngIf="!loading && (isReviewer() || isAdmin())" class="dashboard-content">
-    <div class="stats-grid" *ngIf="isAdmin() && adminData">
-      <mat-card class="stat-card primary">
+      <!-- Quick Actions - Redesigned -->
+      <mat-card class="content-card quick-actions-card">
+        <mat-card-header>
+          <mat-card-title>Quick Actions</mat-card-title>
+        </mat-card-header>
         <mat-card-content>
-          <div class="stat-icon"><mat-icon>assignment</mat-icon></div>
-          <div class="stat-value">{{ adminData.totalTasks }}</div>
-          <div class="stat-label">Total Tasks</div>
-        </mat-card-content>
-      </mat-card>
-
-      <mat-card class="stat-card pending">
-        <mat-card-content>
-          <div class="stat-icon"><mat-icon>pending_actions</mat-icon></div>
-          <div class="stat-value">{{ adminData.pendingTasks }}</div>
-          <div class="stat-label">Pending</div>
-        </mat-card-content>
-      </mat-card>
-
-      <mat-card class="stat-card success">
-        <mat-card-content>
-          <div class="stat-icon"><mat-icon>check_circle</mat-icon></div>
-          <div class="stat-value">{{ adminData.completedTasks }}</div>
-          <div class="stat-label">Completed</div>
-        </mat-card-content>
-      </mat-card>
-
-      <mat-card class="stat-card danger">
-        <mat-card-content>
-          <div class="stat-icon"><mat-icon>warning</mat-icon></div>
-          <div class="stat-value">{{ adminData.overdueTasks }}</div>
-          <div class="stat-label">Overdue</div>
-        </mat-card-content>
-      </mat-card>
-    </div>
-
-    <!-- Quick Actions -->
-    <mat-card class="actions-card">
-      <mat-card-header>
-        <mat-card-title>Quick Actions</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <div class="action-buttons">
-          <button mat-raised-button color="primary" routerLink="/tasks">
-            <mat-icon>view_list</mat-icon>
-            View All Tasks
-          </button>
-          <button mat-raised-button color="accent" routerLink="/tasks" [queryParams]="{status: 'PENDING'}">
-            <mat-icon>pending_actions</mat-icon>
-            Pending Tasks
-          </button>
-          @if (isAdmin()) {
-            <button mat-raised-button color="warn" routerLink="/admin/csv-import">
+          <div class="quick-actions-grid">
+            <button mat-flat-button class="quick-action-btn" routerLink="/tasks">
+              <mat-icon>view_list</mat-icon>
+              <span>All Tasks</span>
+            </button>
+            <button mat-flat-button class="quick-action-btn" routerLink="/tasks" [queryParams]="{status: 'PENDING'}">
+              <mat-icon>pending_actions</mat-icon>
+              <span>Pending</span>
+            </button>
+            <button *ngIf="isAdmin()" mat-flat-button class="quick-action-btn" routerLink="/admin/import">
               <mat-icon>upload_file</mat-icon>
-              Import CSV
+              <span>Import CSV</span>
             </button>
-            <button mat-raised-button routerLink="/admin/users">
+            <button *ngIf="isAdmin()" mat-flat-button class="quick-action-btn" routerLink="/admin/users">
               <mat-icon>people</mat-icon>
-              Manage Users
+              <span>Users</span>
             </button>
-            <button mat-raised-button routerLink="/admin/master-data">
+            <button *ngIf="isAdmin()" mat-flat-button class="quick-action-btn" routerLink="/admin/master-data">
               <mat-icon>storage</mat-icon>
-              Master Data
+              <span>Master Data</span>
             </button>
-          }
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Admin Charts - Moved to Bottom with More Visualizations -->
+      <div *ngIf="isAdmin() && adminData">
+        <h2 class="section-title">Analytics & Insights</h2>
+        <div class="charts-row">
+          <mat-card class="content-card chart-card">
+            <mat-card-header>
+              <mat-card-title>Task Status Distribution</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="chart-container">
+                <canvas baseChart
+                  [type]="doughnutChartType"
+                  [data]="adminStatusChartData"
+                  [options]="chartOptions">
+                </canvas>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="content-card chart-card">
+            <mat-card-header>
+              <mat-card-title>System Health</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="health-status">
+                <div class="health-item">
+                  <mat-icon [class.connected]="adminData.systemHealth.dbConnected">storage</mat-icon>
+                  <span>Database</span>
+                  <span class="status" [class.connected]="adminData.systemHealth.dbConnected">
+                    {{ adminData.systemHealth.dbConnected ? 'Connected' : 'Disconnected' }}
+                  </span>
+                </div>
+                <div class="health-item">
+                  <mat-icon [class.connected]="adminData.systemHealth.sharePointConnected">folder</mat-icon>
+                  <span>SharePoint</span>
+                  <span class="status" [class.connected]="adminData.systemHealth.sharePointConnected">
+                    {{ adminData.systemHealth.sharePointConnected ? 'Connected' : 'Disconnected' }}
+                  </span>
+                </div>
+                <div class="health-item">
+                  <mat-icon [class.connected]="adminData.systemHealth.teamsConnected">group</mat-icon>
+                  <span>Teams</span>
+                  <span class="status" [class.connected]="adminData.systemHealth.teamsConnected">
+                    {{ adminData.systemHealth.teamsConnected ? 'Connected' : 'Disconnected' }}
+                  </span>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
         </div>
-      </mat-card-content>
-    </mat-card>
+
+        <div class="charts-row">
+          <mat-card class="content-card chart-card">
+            <mat-card-header>
+              <mat-card-title>Recent CSV Imports</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="import-list" *ngIf="adminData.recentImports?.length; else noImports">
+                <div class="import-item" *ngFor="let import of adminData.recentImports">
+                  <div class="import-info">
+                    <mat-icon>upload_file</mat-icon>
+                    <div>
+                      <div class="import-name">{{ import.fileName }}</div>
+                      <div class="import-meta">{{ import.totalRows }} rows • {{ import.createdAt | date:'short' }}</div>
+                    </div>
+                  </div>
+                  <span class="import-status" [ngClass]="'status-' + import.status">{{ import.status }}</span>
+                </div>
+              </div>
+              <ng-template #noImports>
+                <div class="empty-state">
+                  <mat-icon>cloud_upload</mat-icon>
+                  <p>No recent imports</p>
+                </div>
+              </ng-template>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+
+      <!-- Reviewer Charts - Moved to Bottom -->
+      <div *ngIf="isReviewer() && reviewerData">
+        <h2 class="section-title">Analytics & Insights</h2>
+        <div class="charts-row">
+          <mat-card class="content-card chart-card">
+            <mat-card-header>
+              <mat-card-title>Entity-wise Compliance Health</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="chart-container">
+                <canvas baseChart
+                  [type]="barChartType"
+                  [data]="reviewerEntityChartData"
+                  [options]="chartOptions">
+                </canvas>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="content-card chart-card">
+            <mat-card-header>
+              <mat-card-title>Department-wise Statistics</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="chart-container">
+                <canvas baseChart
+                  [type]="barChartType"
+                  [data]="reviewerDepartmentChartData"
+                  [options]="chartOptions">
+              </canvas>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Overdue Tasks List -->
+      <mat-card class="content-card" *ngIf="isReviewer() && reviewerData?.overdueTasks?.length">
+        <mat-card-header>
+          <mat-card-title>Overdue Tasks Requiring Attention</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="overdue-list">
+            <div class="overdue-item" *ngFor="let task of reviewerData.overdueTasks">
+              <mat-icon class="overdue-icon">warning</mat-icon>
+              <div class="overdue-info">
+                <div class="overdue-title">{{ task.title }}</div>
+                <div class="overdue-meta">
+                  {{ task.entity?.name }} • {{ task.department?.name }} • Due: {{ task.dueDate | date:'short' }}
+                </div>
+              </div>
+              <button mat-stroked-button [routerLink]="['/tasks', task.id]">View</button>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
   </div>
 </div>

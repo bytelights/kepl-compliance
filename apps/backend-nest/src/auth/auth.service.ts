@@ -121,4 +121,22 @@ export class AuthService {
 
     return user;
   }
+
+  /**
+   * DEV ONLY - Find or create a dev user for quick testing
+   */
+  async findOrCreateDevUser(email: string): Promise<any> {
+    let user = await this.usersService.findByEmail(email);
+
+    if (!user) {
+      user = await this.usersService.create({
+        email,
+        name: 'Dev User',
+        msOid: 'dev-oid-' + Date.now(),
+        role: 'admin', // Give admin role for testing
+      });
+    }
+
+    return user;
+  }
 }

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap, catchError, of } from 'rxjs';
+import { BehaviorSubject, Observable, tap, catchError, of, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface CurrentUser {
@@ -44,13 +44,13 @@ export class AuthService {
           this.currentUserSubject.next(null);
           return of(null);
         }),
-        tap((response) => {
+        map((response) => {
           if (response && 'data' in response) {
             return response.data;
           }
           return null;
         })
-      ) as Observable<CurrentUser | null>;
+      );
   }
 
   logout(): Observable<any> {

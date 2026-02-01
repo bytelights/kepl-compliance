@@ -8,6 +8,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 
@@ -16,6 +18,7 @@ import { environment } from '../../../../environments/environment';
   standalone: true,
   imports: [
     CommonModule,
+    RouterModule,
     FormsModule,
     ReactiveFormsModule,
     MatCardModule,
@@ -25,6 +28,7 @@ import { environment } from '../../../../environments/environment';
     MatInputModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
+    MatToolbarModule,
   ],
   templateUrl: './teams-config.component.html',
   styleUrls: ['./teams-config.component.css'],

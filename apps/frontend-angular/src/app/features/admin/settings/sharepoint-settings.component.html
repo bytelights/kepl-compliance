@@ -1,0 +1,108 @@
+<div class="page-wrapper">
+  <div class="page-container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1>SharePoint Configuration</h1>
+      <p class="page-subtitle">Configure SharePoint integration for evidence file storage</p>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-container">
+      <mat-spinner></mat-spinner>
+      <p>Loading configuration...</p>
+    </div>
+
+    <!-- Configuration Form -->
+    <mat-card *ngIf="!loading" class="config-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>folder</mat-icon>
+          SharePoint Settings
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form class="config-form">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Tenant ID</mat-label>
+            <input matInput [(ngModel)]="config.tenantId" name="tenantId" required>
+            <mat-hint>Your Microsoft 365 tenant ID</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Site ID</mat-label>
+            <input matInput [(ngModel)]="config.siteId" name="siteId" required>
+            <mat-hint>SharePoint site ID where documents will be stored</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Drive ID</mat-label>
+            <input matInput [(ngModel)]="config.driveId" name="driveId" required>
+            <mat-hint>Document library drive ID</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Base Folder Name</mat-label>
+            <input matInput [(ngModel)]="config.baseFolderName" name="baseFolderName" required>
+            <mat-hint>Root folder for compliance documents (default: Compliance-Documents)</mat-hint>
+          </mat-form-field>
+
+          <div class="button-row">
+            <button mat-raised-button color="primary" (click)="saveConfig()" [disabled]="saving">
+              <mat-spinner *ngIf="saving" diameter="20"></mat-spinner>
+              <mat-icon *ngIf="!saving">save</mat-icon>
+              {{ saving ? 'Saving...' : 'Save Configuration' }}
+            </button>
+
+            <button mat-stroked-button (click)="testConnection()" [disabled]="testing">
+              <mat-spinner *ngIf="testing" diameter="20"></mat-spinner>
+              <mat-icon *ngIf="!testing">check_circle</mat-icon>
+              {{ testing ? 'Testing...' : 'Test Connection' }}
+            </button>
+
+            <button mat-stroked-button routerLink="/admin/settings">
+              <mat-icon>arrow_back</mat-icon>
+              Back to Settings
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Help Card -->
+    <mat-card class="help-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>help</mat-icon>
+          How to Get SharePoint IDs
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="help-steps">
+          <div class="help-step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <strong>Tenant ID:</strong>
+              <p>Azure Portal → Azure Active Directory → Properties → Tenant ID</p>
+            </div>
+          </div>
+
+          <div class="help-step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <strong>Site ID:</strong>
+              <p>Graph Explorer: <code>GET https://graph.microsoft.com/v1.0/sites/&#123;hostname&#125;:/sites/&#123;sitename&#125;</code></p>
+            </div>
+          </div>
+
+          <div class="help-step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <strong>Drive ID:</strong>
+              <p>Graph Explorer: <code>GET https://graph.microsoft.com/v1.0/sites/&#123;site-id&#125;/drives</code></p>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -19,6 +20,7 @@ export class AuthController {
   constructor(
     private authService: AuthService,
     private configService: ConfigService,
+    private jwtService: JwtService,
   ) {}
 
   @Get('microsoft/login')
@@ -77,5 +79,45 @@ export class AuthController {
   logout(@Res() res: Response) {
     res.clearCookie('access_token');
     res.json({ success: true, message: 'Logged out successfully' });
+  }
+
+  /**
+   * DEV ONLY - Quick login bypass for UI testing
+   */
+  @Get('dev/login')
+  async devLogin(@Res() res: Response) {
+    if (this.configService.get('NODE_ENV') === 'production') {
+      throw new UnauthorizedException('Dev login not available in production');
+    }
+
+    try {
+      // Create or get dev user
+      const user = await this.authService.findOrCreateDevUser('dev@test.com');
+      
+      // Generate JWT token using injected JwtService
+      const payload: JwtPayload = {
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+      };
+
+      const accessToken = this.jwtService.sign(payload);
+
+      // Set httpOnly cookie
+      res.cookie('access_token', accessToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      // Redirect to dashboard
+      const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+      res.redirect(`${frontendUrl}/dashboard`);
+    } catch (error) {
+      console.error('Dev login error:', error);
+      const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+      res.redirect(`${frontendUrl}/login?error=dev_login_failed`);
+    }
   }
 }

@@ -4,6 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from '../../../core/services/auth.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -13,10 +14,16 @@ import { AuthService } from '../../../core/services/auth.service';
   styleUrls: ['./login.component.css'],
 })
 export class LoginComponent {
+  isProduction = environment.production;
+
   constructor(private authService: AuthService) {}
 
   login(): void {
     this.authService.login();
+  }
+
+  devLogin(): void {
+    window.location.href = `${environment.apiUrl}/auth/dev/login`;
   }
 }
 

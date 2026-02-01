@@ -1,0 +1,20 @@
+<mat-toolbar color="primary" class="app-toolbar">
+  <div class="toolbar-container">
+    <img src="/images/logo.png" alt="Kelp" class="header-logo" routerLink="/dashboard">
+    <span class="spacer"></span>
+    <span class="user-info" *ngIf="user">{{ user?.name || user?.email }}</span>
+    <button mat-icon-button routerLink="/admin/settings" matTooltip="Settings" *ngIf="isAdmin()">
+      <mat-icon>settings</mat-icon>
+    </button>
+    <button mat-icon-button routerLink="/dashboard" matTooltip="Dashboard">
+      <mat-icon>dashboard</mat-icon>
+    </button>
+    <button mat-icon-button (click)="logout()" matTooltip="Logout">
+      <mat-icon>logout</mat-icon>
+    </button>
+  </div>
+</mat-toolbar>
+
+<div class="app-content">
+  <router-outlet></router-outlet>
+</div>

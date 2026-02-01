@@ -1,0 +1,167 @@
+<div class="page-wrapper">
+  <div class="page-container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1>System Settings</h1>
+      <p class="page-subtitle">Configure integrations and system preferences</p>
+    </div>
+
+    <!-- Settings Tabs -->
+    <mat-card class="settings-card">
+      <mat-tab-group>
+        <!-- SharePoint Configuration Tab -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-icon">folder</mat-icon>
+            SharePoint
+          </ng-template>
+          <div class="tab-content">
+            <div class="config-section">
+              <h3>SharePoint Configuration</h3>
+              <p class="config-description">Configure SharePoint integration for evidence file storage</p>
+              
+              <!-- SharePoint Form -->
+              <div class="config-form-card">
+                <form class="config-form">
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Tenant ID</mat-label>
+                    <input matInput placeholder="Your Microsoft 365 tenant ID">
+                    <mat-hint>Azure Portal → Azure Active Directory → Properties → Tenant ID</mat-hint>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Site ID</mat-label>
+                    <input matInput placeholder="SharePoint site ID">
+                    <mat-hint>SharePoint site ID where documents will be stored</mat-hint>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Drive ID</mat-label>
+                    <input matInput placeholder="Document library drive ID">
+                    <mat-hint>Document library drive ID</mat-hint>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Base Folder Name</mat-label>
+                    <input matInput value="Compliance-Documents">
+                    <mat-hint>Root folder for compliance documents</mat-hint>
+                  </mat-form-field>
+
+                  <div class="button-row">
+                    <button mat-raised-button color="primary">
+                      <mat-icon>save</mat-icon>
+                      Save Configuration
+                    </button>
+                    <button mat-stroked-button type="button">
+                      <mat-icon>check_circle</mat-icon>
+                      Test Connection
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Teams Configuration Tab -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-icon">group</mat-icon>
+            Microsoft Teams
+          </ng-template>
+          <div class="tab-content">
+            <div class="config-section">
+              <h3>Microsoft Teams Integration</h3>
+              <p class="config-description">Configure Teams webhook for automated compliance reports</p>
+              
+              <!-- Teams Form -->
+              <div class="config-form-card">
+                <form class="config-form">
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Webhook URL</mat-label>
+                    <input matInput placeholder="https://outlook.office.com/webhook/...">
+                    <mat-hint>Teams channel incoming webhook URL</mat-hint>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Channel Name</mat-label>
+                    <input matInput placeholder="Compliance Updates">
+                    <mat-hint>Name of the Teams channel for notifications</mat-hint>
+                  </mat-form-field>
+
+                  <div class="checkbox-group">
+                    <h4>Notification Settings</h4>
+                    <mat-checkbox>Send daily compliance summary</mat-checkbox>
+                    <mat-checkbox>Alert on overdue tasks</mat-checkbox>
+                    <mat-checkbox>Notify on task completion</mat-checkbox>
+                    <mat-checkbox>Weekly compliance reports</mat-checkbox>
+                  </div>
+
+                  <div class="button-row">
+                    <button mat-raised-button color="primary">
+                      <mat-icon>save</mat-icon>
+                      Save Configuration
+                    </button>
+                    <button mat-stroked-button type="button">
+                      <mat-icon>send</mat-icon>
+                      Send Test Message
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- System Configuration Tab -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-icon">tune</mat-icon>
+            System
+          </ng-template>
+          <div class="tab-content">
+            <div class="config-section">
+              <h3>System Configuration</h3>
+              <p class="config-description">General system settings and preferences</p>
+              
+              <div class="config-items">
+                <div class="config-item">
+                  <mat-icon>storage</mat-icon>
+                  <div>
+                    <h4>Master Data</h4>
+                    <p>Manage entities, departments, laws, and compliance categories</p>
+                    <button mat-raised-button color="primary" routerLink="/admin/master-data">
+                      Manage Master Data
+                    </button>
+                  </div>
+                </div>
+
+                <div class="config-item">
+                  <mat-icon>people</mat-icon>
+                  <div>
+                    <h4>Users & Roles</h4>
+                    <p>Manage user accounts and role assignments</p>
+                    <button mat-raised-button color="primary" routerLink="/admin/users">
+                      Manage Users
+                    </button>
+                  </div>
+                </div>
+
+                <div class="config-item">
+                  <mat-icon>upload_file</mat-icon>
+                  <div>
+                    <h4>CSV Import</h4>
+                    <p>Bulk import compliance tasks from CSV files</p>
+                    <button mat-raised-button color="primary" routerLink="/admin/import">
+                      Import Tasks
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </mat-card>
+  </div>
+</div>

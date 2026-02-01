@@ -1,99 +1,100 @@
-<div class="teams-config-container">
-  <div class="header">
-    <h1>Microsoft Teams Configuration</h1>
-  </div>
+<div class="page-wrapper">
+  <div class="page-container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1>Teams Configuration</h1>
+      <p class="page-subtitle">Configure Microsoft Teams integration for compliance notifications</p>
+    </div>
 
-  <mat-card class="config-card">
-    <mat-card-header>
-      <mat-card-title>
-        <mat-icon aria-label="Teams icon">groups</mat-icon>
-        Teams Webhook Configuration
-      </mat-card-title>
-    </mat-card-header>
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Loading configuration...</p>
+    </div>
 
-    <mat-card-content>
-      <div *ngIf="loading" class="loading-container">
-        <mat-spinner diameter="40"></mat-spinner>
-      </div>
+    <!-- Config Card -->
+    <mat-card class="content-card" *ngIf="!loading">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>groups</mat-icon>
+          Webhook Configuration
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="configForm">
+          <p class="info-text">
+            Configure Microsoft Teams webhook to receive automated compliance notifications and weekly reports
+          </p>
 
-      <form [formGroup]="configForm" *ngIf="!loading">
-        <p class="info-text">
-          Configure Microsoft Teams webhook to receive automated compliance notifications and weekly reports.
-        </p>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Teams Webhook URL</mat-label>
+            <input
+              matInput
+              formControlName="webhookUrl"
+              placeholder="https://outlook.office.com/webhook/..."
+            >
+            <mat-icon matPrefix>link</mat-icon>
+            <mat-error *ngIf="configForm.get('webhookUrl')?.hasError('required')">
+              Webhook URL is required
+            </mat-error>
+            <mat-error *ngIf="configForm.get('webhookUrl')?.hasError('pattern')">
+              Please enter a valid Teams webhook URL
+            </mat-error>
+          </mat-form-field>
 
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Teams Webhook URL</mat-label>
-          <input
-            matInput
-            formControlName="webhookUrl"
-            placeholder="https://outlook.office.com/webhook/..."
-            aria-label="Teams webhook URL input"
-          >
-          <mat-icon matPrefix aria-hidden="true">link</mat-icon>
-          <mat-hint>Enter the incoming webhook URL from your Teams channel</mat-hint>
-          <mat-error *ngIf="configForm.get('webhookUrl')?.hasError('required')">
-            Webhook URL is required
-          </mat-error>
-          <mat-error *ngIf="configForm.get('webhookUrl')?.hasError('pattern')">
-            Please enter a valid Teams webhook URL
-          </mat-error>
-        </mat-form-field>
+          <div class="button-group">
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="saveConfig()"
+              [disabled]="saving || configForm.invalid"
+            >
+              <mat-icon>save</mat-icon>
+              <span *ngIf="!saving">Save Configuration</span>
+              <span *ngIf="saving">Saving...</span>
+            </button>
 
-        <div class="button-group">
-          <button
-            mat-raised-button
-            color="primary"
-            (click)="saveConfig()"
-            [disabled]="saving || configForm.invalid"
-            aria-label="Save Teams configuration"
-          >
-            <mat-icon aria-hidden="true">save</mat-icon>
-            <span *ngIf="!saving">Save Configuration</span>
-            <span *ngIf="saving">Saving...</span>
-          </button>
+            <button
+              mat-button
+              (click)="testConnection()"
+              [disabled]="testing || configForm.invalid"
+            >
+              <mat-icon>check_circle</mat-icon>
+              <span *ngIf="!testing">Test Connection</span>
+              <span *ngIf="testing">Testing...</span>
+            </button>
 
-          <button
-            mat-raised-button
-            color="accent"
-            (click)="testConnection()"
-            [disabled]="testing || configForm.invalid"
-            aria-label="Test Teams connection"
-          >
-            <mat-icon aria-hidden="true">check_circle</mat-icon>
-            <span *ngIf="!testing">Test Connection</span>
-            <span *ngIf="testing">Testing...</span>
-          </button>
+            <button
+              mat-button
+              (click)="triggerWeeklyReport()"
+              [disabled]="configForm.invalid"
+            >
+              <mat-icon>send</mat-icon>
+              Trigger Weekly Report
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
 
-          <button
-            mat-raised-button
-            (click)="triggerWeeklyReport()"
-            [disabled]="configForm.invalid"
-            aria-label="Trigger weekly report manually"
-          >
-            <mat-icon aria-hidden="true">send</mat-icon>
-            Trigger Weekly Report
-          </button>
+    <!-- Help Card -->
+    <mat-card class="help-card" *ngIf="!loading">
+      <mat-card-content>
+        <div class="help-content">
+          <mat-icon>help_outline</mat-icon>
+          <div>
+            <h3>How to Get Teams Webhook URL</h3>
+            <ol>
+              <li>Open Microsoft Teams and go to your desired channel</li>
+              <li>Click on the three dots (•••) next to the channel name</li>
+              <li>Select "Connectors" or "Workflows"</li>
+              <li>Search for "Incoming Webhook" and click "Add"</li>
+              <li>Give it a name (e.g., "Compliance Notifications")</li>
+              <li>Copy the webhook URL and paste it above</li>
+            </ol>
+          </div>
         </div>
-      </form>
-    </mat-card-content>
-  </mat-card>
-
-  <mat-card class="info-card">
-    <mat-card-header>
-      <mat-card-title>
-        <mat-icon aria-label="Information icon">info</mat-icon>
-        How to Get Teams Webhook URL
-      </mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <ol>
-        <li>Open Microsoft Teams and go to your desired channel</li>
-        <li>Click on the three dots (•••) next to the channel name</li>
-        <li>Select "Connectors" or "Workflows"</li>
-        <li>Search for "Incoming Webhook" and click "Add"</li>
-        <li>Give it a name (e.g., "Compliance Notifications")</li>
-        <li>Copy the webhook URL and paste it above</li>
-      </ol>
-    </mat-card-content>
-  </mat-card>
+      </mat-card-content>
+    </mat-card>
+  </div>
 </div>

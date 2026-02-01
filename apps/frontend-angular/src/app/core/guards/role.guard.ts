@@ -10,9 +10,22 @@ export const roleGuard: CanActivateFn = (route, state) => {
 
   return authService.getCurrentUser().pipe(
     map((user) => {
-      if (user && requiredRoles.includes(user.role)) {
+      if (!user || !user.role) {
+        console.error('Role guard blocked: No user or role');
+        router.navigate(['/dashboard']);
+        return false;
+      }
+      
+      const hasPermission = requiredRoles.some(
+        role => role.toLowerCase() === user.role.toLowerCase()
+      );
+      
+      if (hasPermission) {
+        console.log('Role guard passed:', user.role, 'has access to', requiredRoles);
         return true;
       }
+      
+      console.error('Role guard blocked. User role:', user.role, 'Required roles:', requiredRoles);
       router.navigate(['/dashboard']);
       return false;
     })

@@ -1,0 +1,173 @@
+/* Toolbar */
+.app-toolbar {
+  height: 64px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 0 !important;
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+.toolbar-container {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 100%;
+}
+
+.header-logo {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+  margin-left: 12px;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+/* Page Wrapper */
+.page-wrapper {
+  min-height: calc(100vh - 64px);
+  background-color: #f5f7fa;
+}
+
+.page-container {
+  padding: 32px 24px;
+}
+
+/* Page Header */
+.page-header {
+  margin-bottom: 32px;
+}
+
+.page-header h1 {
+  font-size: 24px;
+  font-weight: 500;
+  color: #1a1a1a;
+  margin: 0 0 4px 0;
+}
+
+.page-subtitle {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+/* Content Card */
+.content-card {
+  margin-bottom: 24px;
+}
+
+.content-card ::ng-deep .mat-mdc-tab-labels {
+  padding: 0 24px;
+}
+
+.content-card ::ng-deep .mat-mdc-tab-label {
+  min-width: 120px;
+}
+
+.content-card ::ng-deep .mat-mdc-tab-label-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Tab Content */
+.tab-content {
+  padding: 32px 24px;
+}
+
+.add-form {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 32px;
+}
+
+.add-form mat-form-field {
+  flex: 1;
+}
+
+.add-form button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 14px;
+  padding: 12px 20px;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.empty-state mat-icon {
+  font-size: 64px;
+  width: 64px;
+  height: 64px;
+  color: #bdbdbd;
+  margin-bottom: 16px;
+}
+
+.empty-state p {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+/* Table */
+.table-container {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+}
+
+th.mat-header-cell {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 16px;
+}
+
+td.mat-cell {
+  font-size: 14px;
+  color: #1a1a1a;
+  padding: 16px;
+}
+
+.mat-row:hover {
+  background-color: #f5f7fa;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page-container {
+    padding: 20px 16px;
+  }
+
+  .page-header h1 {
+    font-size: 20px;
+  }
+
+  .tab-content {
+    padding: 24px 16px;
+  }
+
+  .add-form {
+    flex-direction: column;
+  }
+
+  .add-form button {
+    width: 100%;
+    margin-top: 0;
+  }
+}

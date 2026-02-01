@@ -10,6 +10,8 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
@@ -18,6 +20,7 @@ import { environment } from '../../../environments/environment';
   standalone: true,
   imports: [
     CommonModule,
+    RouterModule,
     FormsModule,
     ReactiveFormsModule,
     MatCardModule,
@@ -29,6 +32,7 @@ import { environment } from '../../../environments/environment';
     MatNativeDateModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
+    MatToolbarModule,
   ],
   templateUrl: './reports.component.html',
   styleUrls: ['./reports.component.css'],

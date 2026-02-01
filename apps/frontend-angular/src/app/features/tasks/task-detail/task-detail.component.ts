@@ -10,6 +10,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TaskService } from '../../../core/services/task.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ComplianceTask } from '../../../core/models';
@@ -29,6 +30,7 @@ import { ComplianceTask } from '../../../core/models';
     MatInputModule,
     MatProgressSpinnerModule,
     MatDialogModule,
+    MatTooltipModule,
   ],
   template: `
     <div class="task-detail-container">

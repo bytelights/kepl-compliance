@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
+import { AppLayoutComponent } from './core/layout/app-layout.component';
 
 export const routes: Routes = [
   {
@@ -21,81 +22,104 @@ export const routes: Routes = [
       ),
   },
   {
-    path: 'dashboard',
+    path: '',
+    component: AppLayoutComponent,
     canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/dashboard/dashboard.component').then(
-        (m) => m.DashboardComponent
-      ),
-  },
-  {
-    path: 'tasks',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/tasks/task-list/task-list.component').then(
-        (m) => m.TaskListComponent
-      ),
-  },
-  {
-    path: 'tasks/new',
-    canActivate: [authGuard, roleGuard],
-    data: { roles: ['ADMIN', 'REVIEWER'] },
-    loadComponent: () =>
-      import('./features/tasks/task-create/task-create.component').then(
-        (m) => m.TaskCreateComponent
-      ),
-  },
-  {
-    path: 'tasks/:id',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/tasks/task-detail/task-detail.component').then(
-        (m) => m.TaskDetailComponent
-      ),
-  },
-  {
-    path: 'admin',
-    canActivate: [authGuard, roleGuard],
-    data: { roles: ['ADMIN'] },
     children: [
       {
-        path: 'users',
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./features/dashboard/dashboard.component').then(
+            (m) => m.DashboardComponent
+          ),
+      },
+      {
+        path: 'tasks',
+        loadComponent: () =>
+          import('./features/tasks/task-list/task-list.component').then(
+            (m) => m.TaskListComponent
+          ),
+      },
+      {
+        path: 'tasks/new',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN', 'REVIEWER'] },
+        loadComponent: () =>
+          import('./features/tasks/task-create/task-create.component').then(
+            (m) => m.TaskCreateComponent
+          ),
+      },
+      {
+        path: 'tasks/:id',
+        loadComponent: () =>
+          import('./features/tasks/task-detail/task-detail.component').then(
+            (m) => m.TaskDetailComponent
+          ),
+      },
+      {
+        path: 'reports',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN', 'REVIEWER'] },
+        loadComponent: () =>
+          import('./features/reports/reports.component').then(
+            (m) => m.ReportsComponent
+          ),
+      },
+      {
+        path: 'admin/settings',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] },
+        loadComponent: () =>
+          import('./features/admin/settings/settings.component').then(
+            (m) => m.SettingsComponent
+          ),
+      },
+      {
+        path: 'admin/settings/sharepoint',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] },
+        loadComponent: () =>
+          import('./features/admin/settings/sharepoint-settings.component').then(
+            (m) => m.SharePointSettingsComponent
+          ),
+      },
+      {
+        path: 'admin/users',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] },
         loadComponent: () =>
           import('./features/admin/users/users.component').then(
             (m) => m.UsersComponent
           ),
       },
       {
-        path: 'master-data',
+        path: 'admin/master-data',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] },
         loadComponent: () =>
           import('./features/admin/master-data/master-data.component').then(
             (m) => m.MasterDataComponent
           ),
       },
       {
-        path: 'import',
+        path: 'admin/import',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] },
         loadComponent: () =>
           import('./features/admin/csv-import/csv-import.component').then(
             (m) => m.CsvImportComponent
           ),
       },
       {
-        path: 'teams-config',
+        path: 'admin/teams-config',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] },
         loadComponent: () =>
           import('./features/admin/teams-config/teams-config.component').then(
             (m) => m.TeamsConfigComponent
           ),
       },
     ],
-  },
-  {
-    path: 'reports',
-    canActivate: [authGuard, roleGuard],
-    data: { roles: ['ADMIN', 'REVIEWER'] },
-    loadComponent: () =>
-      import('./features/reports/reports.component').then(
-        (m) => m.ReportsComponent
-      ),
   },
   {
     path: '**',

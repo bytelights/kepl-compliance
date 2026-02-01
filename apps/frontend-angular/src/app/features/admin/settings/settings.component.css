@@ -1,0 +1,267 @@
+/* Page Wrapper */
+.page-wrapper {
+  min-height: calc(100vh - 64px);
+  background-color: #f4f5f7;
+}
+
+.page-container {
+  padding: 32px 24px;
+}
+
+/* Page Header */
+.page-header {
+  margin-bottom: 32px;
+}
+
+.page-header h1 {
+  font-size: 24px;
+  font-weight: 500;
+  color: #2c3e50;
+  margin: 0 0 4px 0;
+}
+
+.page-subtitle {
+  font-size: 14px;
+  color: #7f8c8d;
+  margin: 0;
+}
+
+/* Settings Card */
+.settings-card {
+  margin-bottom: 24px;
+}
+
+.settings-card ::ng-deep .mat-mdc-tab-labels {
+  padding: 0 24px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.settings-card ::ng-deep .mat-mdc-tab-label {
+  min-width: 160px;
+  color: #7f8c8d;
+}
+
+.settings-card ::ng-deep .mat-mdc-tab-label.mdc-tab--active {
+  color: #2196F3;
+}
+
+.tab-icon {
+  margin-right: 8px;
+}
+
+/* Tab Content */
+.tab-content {
+  padding: 32px 24px;
+}
+
+.config-section {
+  width: 100%;
+}
+
+.config-section h3 {
+  font-size: 18px;
+  font-weight: 500;
+  color: #2c3e50;
+  margin: 0 0 8px 0;
+}
+
+.config-description {
+  font-size: 14px;
+  color: #7f8c8d;
+  margin: 0 0 24px 0;
+}
+
+.config-link button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Config Form Card */
+.config-form-card {
+  background-color: #ffffff;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 24px;
+  width: 100%;
+}
+
+.config-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.button-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.button-row button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+}
+
+/* Checkbox Group */
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 0;
+}
+
+.checkbox-group h4 {
+  font-size: 14px;
+  font-weight: 500;
+  color: #2c3e50;
+  margin: 0 0 8px 0;
+}
+
+.checkbox-group mat-checkbox {
+  margin-bottom: 8px;
+}
+
+/* SharePoint and Teams Config Sections */
+.config-section > div {
+  width: 100%;
+}
+
+.config-section .config-link {
+  width: 100%;
+  padding: 24px;
+  background-color: #ffffff;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.config-section .config-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* Config Items */
+.config-items {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  width: 100%;
+}
+
+.config-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 24px;
+  background-color: #ffffff;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
+  width: 100%;
+}
+
+.config-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+.config-item mat-icon {
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
+  color: #2196F3;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.config-item > div {
+  flex: 1;
+  width: 100%;
+}
+
+.config-item h4 {
+  font-size: 16px;
+  font-weight: 500;
+  color: #2c3e50;
+  margin: 0 0 4px 0;
+}
+
+.config-item p {
+  font-size: 14px;
+  color: #7f8c8d;
+  margin: 0 0 16px 0;
+}
+
+.config-item button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  background-color: #2196F3;
+  color: #ffffff !important;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.config-item button:hover {
+  background-color: #1976D2;
+}
+
+/* Override Material stroked button styles */
+.config-item ::ng-deep .mat-mdc-outlined-button {
+  border: none !important;
+  background-color: #2196F3 !important;
+  color: #ffffff !important;
+}
+
+.config-item ::ng-deep .mat-mdc-outlined-button:hover {
+  background-color: #1976D2 !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page-container {
+    padding: 20px 16px;
+  }
+
+  .settings-card ::ng-deep .mat-mdc-tab-labels {
+    padding: 0 12px;
+  }
+
+  .settings-card ::ng-deep .mat-mdc-tab-label {
+    min-width: 120px;
+    padding: 0 12px;
+  }
+
+  .tab-content {
+    padding: 24px 16px;
+  }
+
+  .config-item {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+  
+  .config-item mat-icon {
+    margin-top: 0;
+  }
+}

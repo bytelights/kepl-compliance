@@ -29,6 +29,15 @@
           Sign in with Microsoft
         </button>
 
+        <button 
+          *ngIf="!isProduction"
+          mat-stroked-button 
+          class="dev-login-button" 
+          (click)="devLogin()">
+          <mat-icon>code</mat-icon>
+          Skip Auth (Dev Only)
+        </button>
+
         <p class="footer-text">Secure authentication powered by Microsoft</p>
       </div>
     </div>

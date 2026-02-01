@@ -1,0 +1,345 @@
+/* Toolbar */
+.app-toolbar {
+  height: 64px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 0 !important;
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+.toolbar-container {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 100%;
+}
+
+.header-logo {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+  margin-left: 12px;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+/* Page Wrapper */
+.page-wrapper {
+  min-height: calc(100vh - 64px);
+  background-color: #f5f7fa;
+}
+
+.page-container {
+  padding: 32px 24px;
+}
+
+/* Page Header */
+.page-header {
+  margin-bottom: 32px;
+}
+
+.page-header h1 {
+  font-size: 24px;
+  font-weight: 500;
+  color: #1a1a1a;
+  margin: 0 0 4px 0;
+}
+
+.page-subtitle {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+/* Content Card */
+.content-card {
+  margin-bottom: 24px;
+}
+
+.content-card mat-card-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.content-card mat-card-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1a1a1a;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.content-card mat-card-title mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  color: #1976d2;
+}
+
+.content-card mat-card-content {
+  padding: 32px 24px !important;
+}
+
+/* Upload Area */
+.upload-area {
+  border: 2px dashed #bdbdbd;
+  padding: 60px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  background-color: #fafafa;
+}
+
+.upload-area:hover {
+  border-color: #1976d2;
+  background-color: #f5f7fa;
+}
+
+.upload-area.uploading {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.upload-area mat-icon {
+  font-size: 64px;
+  width: 64px;
+  height: 64px;
+  color: #1976d2;
+  margin-bottom: 16px;
+}
+
+.upload-area p {
+  font-size: 16px;
+  color: #1a1a1a;
+  margin: 0 0 8px 0;
+  font-weight: 500;
+}
+
+.upload-hint {
+  font-size: 13px;
+  color: #666;
+}
+
+/* File Info */
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+  padding: 16px;
+  background-color: #e3f2fd;
+  border-left: 4px solid #1976d2;
+}
+
+.file-info mat-icon {
+  color: #1976d2;
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+.file-info span {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  justify-content: center;
+}
+
+.action-buttons button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  padding: 12px 20px;
+}
+
+/* Upload Progress */
+.upload-progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+  padding: 20px;
+}
+
+.upload-progress p {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+/* Loading */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  padding: 60px 20px;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.empty-state mat-icon {
+  font-size: 64px;
+  width: 64px;
+  height: 64px;
+  color: #bdbdbd;
+  margin-bottom: 16px;
+}
+
+.empty-state p {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+/* Table */
+.table-container {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+}
+
+th.mat-header-cell {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 16px;
+}
+
+td.mat-cell {
+  font-size: 14px;
+  color: #1a1a1a;
+  padding: 16px;
+}
+
+.mat-row:hover {
+  background-color: #f5f7fa;
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mode-PREVIEW {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.mode-COMMIT {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-COMPLETED {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-FAILED {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.status-PENDING {
+  background-color: #fff3e0;
+  color: #f57c00;
+}
+
+/* Help Card */
+.help-card {
+  background-color: #e3f2fd;
+  border-left: 4px solid #1976d2;
+}
+
+.help-card mat-card-content {
+  padding: 20px 24px !important;
+}
+
+.help-content {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.help-content mat-icon {
+  color: #1976d2;
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.help-content h3 {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1976d2;
+  margin: 0 0 12px 0;
+}
+
+.help-content ul {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.8;
+}
+
+.help-content li {
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: #555;
+}
+
+.help-content strong {
+  color: #1976d2;
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page-container {
+    padding: 20px 16px;
+  }
+
+  .page-header h1 {
+    font-size: 20px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .action-buttons button {
+    width: 100%;
+  }
+}

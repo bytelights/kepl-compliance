@@ -14,6 +14,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatToolbarModule } from '@angular/material/toolbar';
 import { TaskService } from '../../../core/services/task.service';
 import { MasterDataService } from '../../../core/services/master-data.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -39,6 +40,7 @@ import { ComplianceTask, Entity, Department, Law } from '../../../core/models';
     MatNativeDateModule,
     MatProgressSpinnerModule,
     MatTooltipModule,
+    MatToolbarModule,
   ],
   templateUrl: './task-list.component.html',
   styleUrls: ['./task-list.component.css'],

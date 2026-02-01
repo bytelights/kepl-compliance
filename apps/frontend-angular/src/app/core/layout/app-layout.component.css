@@ -1,0 +1,120 @@
+/* Toolbar */
+.app-toolbar {
+  height: 64px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 0 !important;
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+.toolbar-container {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 100%;
+  gap: 12px;
+}
+
+.header-logo {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+  cursor: pointer;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.user-info {
+  font-size: 14px;
+  margin-right: 4px;
+  color: #ffffff;
+}
+
+.app-toolbar button {
+  color: #ffffff !important;
+}
+
+/* Dashboard Icon - Blue Hover */
+.app-toolbar button[matTooltip="Dashboard"]:hover {
+  background-color: rgba(33, 150, 243, 0.1) !important;
+}
+
+.app-toolbar button[matTooltip="Dashboard"]:hover mat-icon {
+  color: #2196F3 !important;
+}
+
+/* Settings Icon - Green Hover */
+.app-toolbar button[matTooltip="Settings"]:hover {
+  background-color: rgba(76, 175, 80, 0.1) !important;
+}
+
+.app-toolbar button[matTooltip="Settings"]:hover mat-icon {
+  color: #4CAF50 !important;
+}
+
+/* Logout Icon - Red Hover */
+.app-toolbar button[matTooltip="Logout"]:hover {
+  background-color: rgba(244, 67, 54, 0.1) !important;
+}
+
+.app-toolbar button[matTooltip="Logout"]:hover mat-icon {
+  color: #f44336 !important;
+}
+
+/* Content */
+.app-content {
+  margin-top: 64px;
+  min-height: calc(100vh - 64px);
+  background-color: #f4f5f7;
+}
+
+/* Standardized Page Container */
+.app-content ::ng-deep .page-wrapper,
+.app-content ::ng-deep .dashboard-wrapper {
+  min-height: calc(100vh - 64px);
+  background-color: #f4f5f7;
+}
+
+.app-content ::ng-deep .page-container,
+.app-content ::ng-deep .dashboard-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* Global Card Styles - Clean Design */
+.app-content ::ng-deep mat-card,
+.app-content ::ng-deep .mat-mdc-card {
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e8e8e8;
+}
+
+.app-content ::ng-deep mat-card-header,
+.app-content ::ng-deep .mat-mdc-card-header {
+  border-bottom: none !important;
+  padding: 20px 24px 16px !important;
+}
+
+.app-content ::ng-deep mat-card-title,
+.app-content ::ng-deep .mat-mdc-card-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.app-content ::ng-deep mat-card-content,
+.app-content ::ng-deep .mat-mdc-card-content {
+  padding: 20px 24px !important;
+}
