@@ -26,17 +26,38 @@ export class AuthController {
   @Get('microsoft/login')
   async microsoftLogin(@Res() res: Response) {
     try {
+      console.log('🔵 Starting Microsoft login flow...');
+      console.log('🔵 Config check:', {
+        clientId: this.configService.get('MICROSOFT_CLIENT_ID'),
+        tenantId: this.configService.get('MICROSOFT_TENANT_ID'),
+        redirectUri: this.configService.get('MICROSOFT_REDIRECT_URI'),
+        hasSecret: !!this.configService.get('MICROSOFT_CLIENT_SECRET'),
+      });
+      
       const authUrl = await this.authService.getAuthUrl();
-      res.redirect(authUrl);
+      console.log('🔵 Generated auth URL:', authUrl);
+      console.log('🔵 About to redirect...');
+      
+      // Set no-cache headers to prevent caching
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
+      return res.redirect(302, authUrl);
     } catch (error) {
-      console.error('Login redirect error:', error);
+      console.error('❌ Login redirect error:', error);
       throw new UnauthorizedException('Failed to initiate login');
     }
   }
 
   @Get('microsoft/callback')
-  async microsoftCallback(@Query('code') code: string, @Res() res: Response) {
+  async microsoftCallback(@Query('code') code: string, @Query() allParams: any, @Res() res: Response) {
+    console.log('🔵 Callback received');
+    console.log('🔵 Code:', code);
+    console.log('🔵 All query params:', allParams);
+    
     if (!code) {
+      console.error('❌ No authorization code provided');
       throw new UnauthorizedException('Authorization code not provided');
     }
 

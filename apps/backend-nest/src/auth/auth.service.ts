@@ -30,6 +30,16 @@ export class AuthService {
         authority: `https://login.microsoftonline.com/${tenantId}`,
         clientSecret,
       },
+      system: {
+        loggerOptions: {
+          loggerCallback: (level, message, containsPii) => {
+            if (containsPii) return;
+            console.log('MSAL:', message);
+          },
+          piiLoggingEnabled: false,
+          logLevel: 3,
+        },
+      },
     });
   }
 
@@ -45,6 +55,8 @@ export class AuthService {
     return this.msalClient.getAuthCodeUrl({
       scopes: ['User.Read'],
       redirectUri,
+      // Enable PKCE (required by Azure AD)
+      responseMode: 'query',
     });
   }
 
@@ -60,7 +72,7 @@ export class AuthService {
     }
 
     try {
-      // Exchange code for tokens
+      // Exchange code for tokens with PKCE
       const tokenResponse = await this.msalClient.acquireTokenByCode({
         code,
         scopes: ['User.Read'],

@@ -294,7 +294,7 @@
               <mat-card-title>Recent CSV Imports</mat-card-title>
             </mat-card-header>
             <mat-card-content>
-              <div class="import-list" *ngIf="adminData.recentImports?.length; else noImports">
+              <div class="import-list" *ngIf="adminData.recentImports.length; else noImports">
                 <div class="import-item" *ngFor="let import of adminData.recentImports">
                   <div class="import-info">
                     <mat-icon>upload_file</mat-icon>
@@ -353,7 +353,7 @@
       </div>
 
       <!-- Overdue Tasks List -->
-      <mat-card class="content-card" *ngIf="isReviewer() && reviewerData?.overdueTasks?.length">
+      <mat-card class="content-card" *ngIf="isReviewer() && reviewerData.overdueTasks.length">
         <mat-card-header>
           <mat-card-title>Overdue Tasks Requiring Attention</mat-card-title>
         </mat-card-header>
