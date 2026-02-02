@@ -14,10 +14,8 @@ import { CreateMasterDataDto } from './dto/create-master-data.dto';
 import { UpdateMasterDataDto } from './dto/update-master-data.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 
-@Controller('master')
+@Controller('master-data')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 export class MasterDataController {
   constructor(private readonly masterDataService: MasterDataService) {}

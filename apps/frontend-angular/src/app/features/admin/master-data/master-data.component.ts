@@ -14,6 +14,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MasterDataService } from '../../../core/services/master-data.service';
 import { Entity, Department, Law } from '../../../core/models';
+import { DialogService } from '../../../shared/services/dialog.service';
 
 @Component({
   selector: 'app-master-data',
@@ -47,7 +48,8 @@ export class MasterDataComponent implements OnInit {
 
   constructor(
     private masterDataService: MasterDataService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private dialogService: DialogService
   ) {}
 
   ngOnInit() {
@@ -94,7 +96,15 @@ export class MasterDataComponent implements OnInit {
   }
 
   deleteEntity(entity: Entity) {
-    if (confirm(`Delete entity "${entity.name}"? This will affect all related tasks.`)) {
+    this.dialogService.confirm({
+      title: 'Delete Entity',
+      message: `Delete entity "${entity.name}"? This will affect all related tasks.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      isDanger: true
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
+
       this.masterDataService.deleteEntity(entity.id).subscribe({
         next: () => {
           this.snackBar.open('Entity deleted successfully', 'Close', { duration: 3000 });
@@ -106,7 +116,7 @@ export class MasterDataComponent implements OnInit {
           });
         },
       });
-    }
+    });
   }
 
   addDepartment() {
@@ -129,7 +139,15 @@ export class MasterDataComponent implements OnInit {
   }
 
   deleteDepartment(dept: Department) {
-    if (confirm(`Delete department "${dept.name}"? This will affect all related tasks.`)) {
+    this.dialogService.confirm({
+      title: 'Delete Department',
+      message: `Delete department "${dept.name}"? This will affect all related tasks.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      isDanger: true
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
+
       this.masterDataService.deleteDepartment(dept.id).subscribe({
         next: () => {
           this.snackBar.open('Department deleted successfully', 'Close', { duration: 3000 });
@@ -141,7 +159,7 @@ export class MasterDataComponent implements OnInit {
           });
         },
       });
-    }
+    });
   }
 
   addLaw() {
@@ -164,7 +182,15 @@ export class MasterDataComponent implements OnInit {
   }
 
   deleteLaw(law: Law) {
-    if (confirm(`Delete law "${law.name}"? This will affect all related tasks.`)) {
+    this.dialogService.confirm({
+      title: 'Delete Law',
+      message: `Delete law "${law.name}"? This will affect all related tasks.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      isDanger: true
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
+
       this.masterDataService.deleteLaw(law.id).subscribe({
         next: () => {
           this.snackBar.open('Law deleted successfully', 'Close', { duration: 3000 });
@@ -176,6 +202,6 @@ export class MasterDataComponent implements OnInit {
           });
         },
       });
-    }
+    });
   }
 }

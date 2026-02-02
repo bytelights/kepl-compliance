@@ -60,12 +60,16 @@ export class DashboardService {
     };
   }
 
-  async getReviewerDashboard() {
+  async getReviewerDashboard(userId: string, userRole: string) {
     const today = new Date();
+
+    // Determine filter: admin sees all, reviewer sees only their tasks
+    const reviewerFilter = userRole === 'admin' ? {} : { reviewerId: userId };
 
     // Entity-wise stats
     const entityStats = await this.prisma.complianceTask.groupBy({
       by: ['entityId'],
+      where: reviewerFilter,
       _count: { _all: true },
     });
 
@@ -74,16 +78,18 @@ export class DashboardService {
         const [entity, pending, completed, overdue] = await Promise.all([
           this.prisma.entity.findUnique({ where: { id: stat.entityId } }),
           this.prisma.complianceTask.count({
-            where: { entityId: stat.entityId, status: 'PENDING' },
+            where: { ...reviewerFilter, entityId: stat.entityId, status: 'PENDING' },
           }),
           this.prisma.complianceTask.count({
             where: {
+              ...reviewerFilter,
               entityId: stat.entityId,
               status: 'COMPLETED',
             },
           }),
           this.prisma.complianceTask.count({
             where: {
+              ...reviewerFilter,
               entityId: stat.entityId,
               status: 'PENDING',
               dueDate: { lt: today },
@@ -105,6 +111,7 @@ export class DashboardService {
     // Department-wise stats
     const departmentStats = await this.prisma.complianceTask.groupBy({
       by: ['departmentId'],
+      where: reviewerFilter,
       _count: { _all: true },
     });
 
@@ -116,18 +123,21 @@ export class DashboardService {
           }),
           this.prisma.complianceTask.count({
             where: {
+              ...reviewerFilter,
               departmentId: stat.departmentId,
               status: 'PENDING',
             },
           }),
           this.prisma.complianceTask.count({
             where: {
+              ...reviewerFilter,
               departmentId: stat.departmentId,
               status: 'COMPLETED',
             },
           }),
           this.prisma.complianceTask.count({
             where: {
+              ...reviewerFilter,
               departmentId: stat.departmentId,
               status: 'PENDING',
               dueDate: { lt: today },
@@ -149,6 +159,7 @@ export class DashboardService {
     // Overdue tasks
     const overdueTasks = await this.prisma.complianceTask.findMany({
       where: {
+        ...reviewerFilter,
         status: 'PENDING',
         dueDate: { lt: today },
       },
@@ -204,6 +215,96 @@ export class DashboardService {
       }),
     ]);
 
+    // Department-wise stats
+    const departmentStats = await this.prisma.complianceTask.groupBy({
+      by: ['departmentId'],
+      _count: { _all: true },
+    });
+
+    const departmentStatsWithNames = await Promise.all(
+      departmentStats.map(async (stat) => {
+        const [department, pending, completed, overdue] = await Promise.all([
+          this.prisma.department.findUnique({
+            where: { id: stat.departmentId },
+          }),
+          this.prisma.complianceTask.count({
+            where: {
+              departmentId: stat.departmentId,
+              status: 'PENDING',
+            },
+          }),
+          this.prisma.complianceTask.count({
+            where: {
+              departmentId: stat.departmentId,
+              status: 'COMPLETED',
+            },
+          }),
+          this.prisma.complianceTask.count({
+            where: {
+              departmentId: stat.departmentId,
+              status: 'PENDING',
+              dueDate: { lt: today },
+            },
+          }),
+        ]);
+
+        return {
+          departmentId: stat.departmentId,
+          departmentName: department?.name || 'Unknown',
+          totalTasks: stat._count._all,
+          pendingCount: pending,
+          completedCount: completed,
+          overdueCount: overdue,
+        };
+      }),
+    );
+
+    // Owner-wise stats (assigned persons)
+    const ownerStats = await this.prisma.complianceTask.groupBy({
+      by: ['ownerId'],
+      _count: { _all: true },
+    });
+
+    const ownerStatsWithNames = await Promise.all(
+      ownerStats.map(async (stat) => {
+        const [owner, pending, completed, overdue] = await Promise.all([
+          this.prisma.user.findUnique({
+            where: { id: stat.ownerId },
+            select: { name: true, email: true },
+          }),
+          this.prisma.complianceTask.count({
+            where: {
+              ownerId: stat.ownerId,
+              status: 'PENDING',
+            },
+          }),
+          this.prisma.complianceTask.count({
+            where: {
+              ownerId: stat.ownerId,
+              status: 'COMPLETED',
+            },
+          }),
+          this.prisma.complianceTask.count({
+            where: {
+              ownerId: stat.ownerId,
+              status: 'PENDING',
+              dueDate: { lt: today },
+            },
+          }),
+        ]);
+
+        return {
+          ownerId: stat.ownerId,
+          ownerName: owner?.name || 'Unknown',
+          ownerEmail: owner?.email || '',
+          totalTasks: stat._count._all,
+          pendingCount: pending,
+          completedCount: completed,
+          overdueCount: overdue,
+        };
+      }),
+    );
+
     // System health (basic checks)
     let dbConnected = true;
     try {
@@ -219,6 +320,8 @@ export class DashboardService {
       overdueTasks: overdueTasksCount,
       totalUsers,
       recentImports,
+      departmentStats: departmentStatsWithNames,
+      ownerStats: ownerStatsWithNames,
       systemHealth: {
         dbConnected,
         sharePointConnected: true, // Would need actual check

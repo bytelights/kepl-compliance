@@ -28,7 +28,7 @@ export class MasterDataService {
         return this.prisma.law.findMany({ orderBy: { name: 'asc' } });
       case 'compliances_master':
         return this.prisma.complianceMaster.findMany({
-          orderBy: { name: 'asc' },
+          orderBy: { title: 'asc' },
           include: { law: true, department: true },
         });
     }
@@ -75,24 +75,41 @@ export class MasterDataService {
   }
 
   async create(type: MasterDataType, createDto: CreateMasterDataDto) {
+    // Validate name
+    if (!createDto.name || !createDto.name.trim()) {
+      throw new BadRequestException('Name cannot be empty');
+    }
+
+    const trimmedName = createDto.name.trim();
+
     // Check for duplicates
-    const existing = await this.findByName(type, createDto.name);
+    const existing = await this.findByName(type, trimmedName);
     if (existing) {
       throw new ConflictException(`${type} with this name already exists`);
     }
 
-    switch (type) {
-      case 'entities':
-        return this.prisma.entity.create({ data: { name: createDto.name } });
-      case 'departments':
-        return this.prisma.department.create({ data: { name: createDto.name } });
-      case 'laws':
-        return this.prisma.law.create({ data: { name: createDto.name } });
-      case 'compliances_master':
-        // ComplianceMaster requires more fields, not supported by simple create
-        throw new BadRequestException(
-          'Use dedicated compliance master endpoints (not yet implemented)',
-        );
+    try {
+      switch (type) {
+        case 'entities':
+          return await this.prisma.entity.create({ data: { name: trimmedName } });
+        case 'departments':
+          return await this.prisma.department.create({ data: { name: trimmedName } });
+        case 'laws':
+          return await this.prisma.law.create({ data: { name: trimmedName } });
+        case 'compliances_master':
+          // ComplianceMaster requires more fields, not supported by simple create
+          throw new BadRequestException(
+            'Use dedicated compliance master endpoints (not yet implemented)',
+          );
+        default:
+          throw new BadRequestException(`Unknown master data type: ${type}`);
+      }
+    } catch (error: any) {
+      console.error(`Error creating ${type}:`, error);
+      if (error?.code === 'P2002') {
+        throw new ConflictException(`${type} with name "${trimmedName}" already exists`);
+      }
+      throw error;
     }
   }
 

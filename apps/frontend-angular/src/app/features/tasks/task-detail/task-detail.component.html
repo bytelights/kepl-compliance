@@ -1,0 +1,251 @@
+<div class="page-wrapper">
+  <div class="page-container">
+    <div *ngIf="loading" class="loading-container">
+      <mat-spinner></mat-spinner>
+    </div>
+
+    <div *ngIf="!loading && task" class="task-content">
+      <!-- Breadcrumb -->
+      <div class="breadcrumb">
+        <a routerLink="/tasks" class="breadcrumb-link">
+          <mat-icon>arrow_back</mat-icon>
+          Tasks
+        </a>
+        <mat-icon>chevron_right</mat-icon>
+        <span class="breadcrumb-current">{{ task.complianceId }}</span>
+      </div>
+
+      <!-- Task Header -->
+      <div class="task-header">
+        <div class="header-left">
+          <div class="task-id">{{ task.complianceId }}</div>
+          <h1 class="task-title">{{ task.title }}</h1>
+        </div>
+        <div class="header-right">
+          <span class="status-badge" [class]="'status-' + task.status">
+            {{ task.status }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Task Info Grid -->
+      <div class="info-section">
+        <h2 class="section-title">Task Information</h2>
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Entity</label>
+            <span>{{ task.entity?.name }}</span>
+          </div>
+          <div class="info-item">
+            <label>Department</label>
+            <span>{{ task.department?.name }}</span>
+          </div>
+          <div class="info-item">
+            <label>Law / Regulation</label>
+            <span>{{ task.law?.name }}</span>
+          </div>
+          <div class="info-item">
+            <label>Frequency</label>
+            <span>{{ task.frequency }}</span>
+          </div>
+          <div class="info-item">
+            <label>Impact</label>
+            <span class="impact-badge" [class]="'impact-' + (task.impact || 'MEDIUM')">
+              {{ task.impact || 'MEDIUM' }}
+            </span>
+          </div>
+          <div class="info-item">
+            <label>Due Date</label>
+            <span [class.overdue]="isOverdue()">
+              {{ task.dueDate | date: 'MMM d, y' }}
+            </span>
+          </div>
+          <div class="info-item">
+            <label>Task Owner</label>
+            <span>{{ task.owner?.name }}</span>
+          </div>
+          <div class="info-item">
+            <label>Reviewer</label>
+            <span>{{ task.reviewer?.name }}</span>
+          </div>
+        </div>
+
+        <div *ngIf="task.description" class="description-block">
+          <label>Description</label>
+          <p>{{ task.description }}</p>
+        </div>
+      </div>
+
+      <!-- Task Actions for Pending Tasks -->
+      <div class="actions-section" *ngIf="task.status === 'PENDING' && canExecuteTask">
+        <div class="actions-header">
+          <h2 class="section-title">Complete This Task</h2>
+          <button mat-button (click)="openSkipDialog()" class="skip-action-btn">
+            <mat-icon>block</mat-icon>
+            Skip Task
+          </button>
+        </div>
+
+        <!-- Stepper -->
+        <div class="completion-stepper">
+          <!-- Step 1: Upload Evidence -->
+          <div class="stepper-step" [class.completed]="selectedFiles.length > 0 || (task.evidenceFiles?.length || 0) > 0">
+            <div class="step-indicator">
+              <div class="step-number">
+                <mat-icon *ngIf="selectedFiles.length > 0 || (task.evidenceFiles?.length || 0) > 0">check</mat-icon>
+                <span *ngIf="!selectedFiles.length && !(task.evidenceFiles?.length || 0)">1</span>
+              </div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Select Evidence Files</h3>
+                <span class="step-badge required">Required</span>
+              </div>
+              <p class="step-description">Select at least one evidence file (will upload to SharePoint on completion)</p>
+              <input
+                type="file"
+                #evidenceFileInput
+                (change)="onEvidenceFileSelect($event)"
+                style="display: none;"
+                accept="*/*"
+                multiple
+              />
+              
+              <!-- No files selected yet -->
+              <button mat-raised-button color="primary" (click)="evidenceFileInput.click()" *ngIf="!selectedFiles.length && !(task.evidenceFiles?.length || 0)">
+                <mat-icon>upload_file</mat-icon>
+                Select Files
+              </button>
+              
+              <!-- Files selected - show preview -->
+              <div *ngIf="selectedFiles.length > 0" class="selected-files-container">
+                <div class="selected-files-header">
+                  <span class="files-count">{{ selectedFiles.length }} file(s) selected</span>
+                  <button mat-button color="primary" (click)="evidenceFileInput.click()">
+                    <mat-icon>add</mat-icon>
+                    Add More
+                  </button>
+                </div>
+                <div class="selected-files-grid">
+                  <div *ngFor="let file of selectedFiles; let i = index" class="selected-file-card">
+                    <div class="file-preview">
+                      <img *ngIf="isImageFile(file)" [src]="getFilePreviewUrl(file)" alt="Preview" class="file-thumbnail" />
+                      <div *ngIf="!isImageFile(file)" class="file-icon-wrapper">
+                        <mat-icon class="file-type-icon">{{ getFileIcon(file) }}</mat-icon>
+                        <span class="file-extension">{{ getFileExtension(file) }}</span>
+                      </div>
+                    </div>
+                    <div class="file-details">
+                      <div class="file-name" [title]="file.name">{{ file.name }}</div>
+                      <div class="file-size">{{ formatFileSize(file.size) }}</div>
+                    </div>
+                    <button mat-icon-button (click)="removeSelectedFile(i)" class="remove-file-btn" matTooltip="Remove file">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Already uploaded files -->
+              <div class="step-status" *ngIf="!selectedFiles.length && (task.evidenceFiles?.length || 0) > 0">
+                <mat-icon>check_circle</mat-icon>
+                <span>{{ task.evidenceFiles?.length || 0 }} file(s) already uploaded</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2: Add Comment -->
+          <div
+            class="stepper-step"
+            [class.completed]="completeComment.trim().length > 0"
+            [class.disabled]="!selectedFiles.length && !(task.evidenceFiles?.length || 0)"
+          >
+            <div class="step-indicator">
+              <div class="step-number">
+                <mat-icon *ngIf="completeComment.trim().length > 0">check</mat-icon>
+                <span *ngIf="!completeComment.trim().length">2</span>
+              </div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Add Completion Comment</h3>
+                <span class="step-badge required">Required</span>
+              </div>
+              <p class="step-description">Provide details about task completion</p>
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Completion Comment</mat-label>
+                <textarea
+                  matInput
+                  rows="4"
+                  [(ngModel)]="completeComment"
+                  placeholder="Enter details about how the task was completed..."
+                  [disabled]="!selectedFiles.length && !(task.evidenceFiles?.length || 0)"
+                ></textarea>
+                <mat-hint *ngIf="!selectedFiles.length && !(task.evidenceFiles?.length || 0)"
+                  >Select evidence files first to enable this field</mat-hint
+                >
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Step 3: Complete -->
+          <div
+            class="stepper-step"
+            [class.disabled]="!completeComment.trim().length || (!selectedFiles.length && !(task.evidenceFiles?.length || 0))"
+          >
+            <div class="step-indicator">
+              <div class="step-number">
+                <span>3</span>
+              </div>
+            </div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3>Submit Task</h3>
+              </div>
+              <p class="step-description">Review and mark the task as complete</p>
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="completeTask()"
+                [disabled]="!completeComment.trim().length || (!selectedFiles.length && !(task.evidenceFiles?.length || 0))"
+                class="complete-btn"
+              >
+                <mat-icon>check_circle</mat-icon>
+                Mark Task as Complete
+              </button>
+              <p
+                class="completion-note"
+                *ngIf="!completeComment.trim().length || (!selectedFiles.length && !(task.evidenceFiles?.length || 0))"
+              >
+                Complete all steps above to mark this task as complete
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Completion Status -->
+      <div class="status-section" *ngIf="task.status === 'COMPLETED'">
+        <div class="status-card completed-card">
+          <mat-icon>check_circle</mat-icon>
+          <div class="status-info">
+            <h3>Task Completed</h3>
+            <p>Completed on {{ task.completedAt | date: 'MMM d, y h:mm a' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="status-section" *ngIf="task.status === 'SKIPPED'">
+        <div class="status-card skipped-card">
+          <mat-icon>block</mat-icon>
+          <div class="status-info">
+            <h3>Task Skipped</h3>
+            <p>Skipped on {{ task.skippedAt | date: 'MMM d, y h:mm a' }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

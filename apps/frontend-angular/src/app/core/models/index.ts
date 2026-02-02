@@ -85,12 +85,13 @@ export interface CsvImportJob {
   id: string;
   fileName: string;
   totalRows: number;
-  validRows: number;
-  errorRows: number;
-  status: 'PENDING' | 'COMPLETED' | 'FAILED';
-  mode: 'PREVIEW' | 'COMMIT';
-  uploaderId: string;
+  successRows: number;
+  failedRows: number;
+  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'PREVIEW';
+  mode: string;
+  uploadedBy: string;
   createdAt: string;
+  completedAt?: string;
   uploader?: User;
   rows?: CsvImportJobRow[];
 }
@@ -99,9 +100,22 @@ export interface CsvImportJobRow {
   id: string;
   jobId: string;
   rowNumber: number;
-  isValid: boolean;
-  errorMessage?: string;
+  success: boolean;
+  errorMsg?: string;
   rowData: any;
+  createdAt: string;
+}
+
+export interface CsvImportResponse {
+  jobId: string;
+  totalRows: number;
+  successRows: number;
+  failedRows: number;
+  job: CsvImportJob;
+  errors: Array<{
+    rowNumber: number;
+    errors: string[];
+  }>;
 }
 
 // Dashboard
@@ -125,6 +139,8 @@ export interface AdminDashboard {
   overdueTasks: number;
   totalUsers: number;
   recentImports: CsvImportJob[];
+  departmentStats: DepartmentStat[];
+  ownerStats: OwnerStat[];
   systemHealth: {
     dbConnected: boolean;
     sharePointConnected: boolean;
@@ -144,6 +160,16 @@ export interface EntityStat {
 export interface DepartmentStat {
   departmentId: string;
   departmentName: string;
+  totalTasks: number;
+  pendingCount: number;
+  completedCount: number;
+  overdueCount: number;
+}
+
+export interface OwnerStat {
+  ownerId: string;
+  ownerName: string;
+  ownerEmail: string;
   totalTasks: number;
   pendingCount: number;
   completedCount: number;

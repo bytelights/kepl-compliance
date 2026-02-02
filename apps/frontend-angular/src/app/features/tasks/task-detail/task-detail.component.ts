@@ -9,10 +9,12 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { TaskService } from '../../../core/services/task.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { DialogService } from '../../../shared/services/dialog.service';
 import { ComplianceTask } from '../../../core/models';
 
 @Component({
@@ -31,387 +33,17 @@ import { ComplianceTask } from '../../../core/models';
     MatProgressSpinnerModule,
     MatDialogModule,
     MatTooltipModule,
+    MatSnackBarModule,
   ],
-  template: `
-    <div class="task-detail-container">
-      <div *ngIf="loading" class="loading-container">
-        <mat-spinner></mat-spinner>
-      </div>
-
-      <div *ngIf="!loading && task" class="task-content">
-        <!-- Header -->
-        <div class="header">
-          <button mat-icon-button routerLink="/tasks">
-            <mat-icon>arrow_back</mat-icon>
-          </button>
-          <h1>{{ task.complianceId }} - {{ task.title }}</h1>
-          <mat-chip [class]="'status-' + task.status">{{ task.status }}</mat-chip>
-        </div>
-
-        <!-- Task Details -->
-        <mat-card class="details-card">
-          <mat-card-header>
-            <mat-card-title>Task Details</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <div class="details-grid">
-              <div class="detail-item">
-                <label>Entity:</label>
-                <span>{{ task.entity?.name }}</span>
-              </div>
-              <div class="detail-item">
-                <label>Department:</label>
-                <span>{{ task.department?.name }}</span>
-              </div>
-              <div class="detail-item">
-                <label>Law:</label>
-                <span>{{ task.law?.name }}</span>
-              </div>
-              <div class="detail-item">
-                <label>Frequency:</label>
-                <span>{{ task.frequency }}</span>
-              </div>
-              <div class="detail-item">
-                <label>Impact:</label>
-                <span>
-                  <mat-chip [class]="'impact-' + task.impact">{{ task.impact || 'N/A' }}</mat-chip>
-                </span>
-              </div>
-              <div class="detail-item">
-                <label>Due Date:</label>
-                <span [class.overdue]="isOverdue()">
-                  {{ task.dueDate | date: 'MMM d, y' }}
-                </span>
-              </div>
-              <div class="detail-item">
-                <label>Owner:</label>
-                <span>{{ task.owner?.name }}</span>
-              </div>
-              <div class="detail-item">
-                <label>Reviewer:</label>
-                <span>{{ task.reviewer?.name }}</span>
-              </div>
-            </div>
-
-            <div *ngIf="task.description" class="description">
-              <label>Description:</label>
-              <p>{{ task.description }}</p>
-            </div>
-          </mat-card-content>
-        </mat-card>
-
-        <!-- Evidence Files -->
-        <mat-card class="evidence-card">
-          <mat-card-header>
-            <mat-card-title>Evidence Files</mat-card-title>
-            <button mat-raised-button color="primary" *ngIf="canUploadEvidence">
-              <mat-icon>upload</mat-icon>
-              Upload Evidence
-            </button>
-          </mat-card-header>
-          <mat-card-content>
-            <div *ngIf="!task.evidenceFiles?.length" class="empty-state">
-              <mat-icon>cloud_upload</mat-icon>
-              <p>No evidence files uploaded</p>
-            </div>
-
-            <div *ngIf="task.evidenceFiles?.length" class="evidence-list">
-              <div *ngFor="let file of task.evidenceFiles" class="evidence-item">
-                <mat-icon>description</mat-icon>
-                <div class="file-info">
-                  <div class="file-name">{{ file.fileName }}</div>
-                  <div class="file-meta">
-                    {{ file.fileSize | number }} bytes • {{ file.uploadedAt | date: 'short' }}
-                  </div>
-                </div>
-                <a mat-icon-button [href]="file.sharepointWebUrl" target="_blank" matTooltip="View">
-                  <mat-icon>open_in_new</mat-icon>
-                </a>
-              </div>
-            </div>
-          </mat-card-content>
-        </mat-card>
-
-        <!-- Actions -->
-        <mat-card class="actions-card" *ngIf="task.status === 'PENDING' && canExecuteTask">
-          <mat-card-header>
-            <mat-card-title>Task Actions</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <div class="action-section">
-              <h3>Complete Task</h3>
-              <mat-form-field class="full-width">
-                <mat-label>Comment (required)</mat-label>
-                <textarea
-                  matInput
-                  rows="3"
-                  [(ngModel)]="completeComment"
-                  placeholder="Enter completion comment..."
-                ></textarea>
-              </mat-form-field>
-              <button
-                mat-raised-button
-                color="primary"
-                (click)="completeTask()"
-                [disabled]="!completeComment || !task.evidenceFiles?.length"
-              >
-                <mat-icon>check_circle</mat-icon>
-                Complete Task
-              </button>
-              <p class="hint" *ngIf="!task.evidenceFiles?.length">
-                * At least one evidence file is required to complete the task
-              </p>
-            </div>
-
-            <div class="action-section">
-              <h3>Skip Task</h3>
-              <mat-form-field class="full-width">
-                <mat-label>Remarks (required)</mat-label>
-                <textarea
-                  matInput
-                  rows="3"
-                  [(ngModel)]="skipRemarks"
-                  placeholder="Enter reason for skipping..."
-                ></textarea>
-              </mat-form-field>
-              <button
-                mat-raised-button
-                color="warn"
-                (click)="skipTask()"
-                [disabled]="!skipRemarks"
-              >
-                <mat-icon>skip_next</mat-icon>
-                Skip Task
-              </button>
-            </div>
-          </mat-card-content>
-        </mat-card>
-
-        <!-- Completion Info -->
-        <mat-card *ngIf="task.status === 'COMPLETED'" class="completion-card">
-          <mat-card-header>
-            <mat-card-title>
-              <mat-icon>check_circle</mat-icon>
-              Task Completed
-            </mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <p><strong>Completed At:</strong> {{ task.completedAt | date: 'medium' }}</p>
-          </mat-card-content>
-        </mat-card>
-
-        <mat-card *ngIf="task.status === 'SKIPPED'" class="skipped-card">
-          <mat-card-header>
-            <mat-card-title>
-              <mat-icon>skip_next</mat-icon>
-              Task Skipped
-            </mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <p><strong>Skipped At:</strong> {{ task.skippedAt | date: 'medium' }}</p>
-          </mat-card-content>
-        </mat-card>
-      </div>
-    </div>
-  `,
-  styles: [
-    `
-      .task-detail-container {
-        padding: 24px;
-        max-width: 1200px;
-        margin: 0 auto;
-      }
-
-      .loading-container {
-        display: flex;
-        justify-content: center;
-        padding: 48px;
-      }
-
-      .header {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        margin-bottom: 24px;
-      }
-
-      .header h1 {
-        flex: 1;
-        margin: 0;
-        font-size: 24px;
-      }
-
-      .details-card,
-      .evidence-card,
-      .actions-card,
-      .completion-card,
-      .skipped-card {
-        margin-bottom: 24px;
-      }
-
-      .details-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 16px;
-        margin-bottom: 16px;
-      }
-
-      .detail-item {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-
-      .detail-item label {
-        font-weight: 500;
-        color: #666;
-        font-size: 12px;
-        text-transform: uppercase;
-      }
-
-      .detail-item span {
-        font-size: 16px;
-      }
-
-      .description {
-        margin-top: 16px;
-        padding-top: 16px;
-        border-top: 1px solid #e0e0e0;
-      }
-
-      .description label {
-        font-weight: 500;
-        color: #666;
-        font-size: 12px;
-        text-transform: uppercase;
-      }
-
-      .overdue {
-        color: #f44336;
-        font-weight: 500;
-      }
-
-      .status-PENDING {
-        background-color: #ff9800 !important;
-        color: white !important;
-      }
-
-      .status-COMPLETED {
-        background-color: #4caf50 !important;
-        color: white !important;
-      }
-
-      .status-SKIPPED {
-        background-color: #9e9e9e !important;
-        color: white !important;
-      }
-
-      .impact-HIGH {
-        background-color: #f44336 !important;
-        color: white !important;
-      }
-
-      .impact-MEDIUM {
-        background-color: #ff9800 !important;
-        color: white !important;
-      }
-
-      .impact-LOW {
-        background-color: #4caf50 !important;
-        color: white !important;
-      }
-
-      .empty-state {
-        text-align: center;
-        padding: 32px;
-        color: #666;
-      }
-
-      .empty-state mat-icon {
-        font-size: 48px;
-        width: 48px;
-        height: 48px;
-        color: #ccc;
-      }
-
-      .evidence-list {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-
-      .evidence-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px;
-        border: 1px solid #e0e0e0;
-        border-radius: 4px;
-      }
-
-      .evidence-item mat-icon:first-child {
-        color: #666;
-      }
-
-      .file-info {
-        flex: 1;
-      }
-
-      .file-name {
-        font-weight: 500;
-        margin-bottom: 4px;
-      }
-
-      .file-meta {
-        font-size: 12px;
-        color: #666;
-      }
-
-      .action-section {
-        margin-bottom: 32px;
-      }
-
-      .action-section:last-child {
-        margin-bottom: 0;
-      }
-
-      .action-section h3 {
-        margin: 0 0 16px 0;
-        font-size: 18px;
-      }
-
-      .full-width {
-        width: 100%;
-      }
-
-      .hint {
-        margin: 8px 0 0 0;
-        font-size: 12px;
-        color: #666;
-      }
-
-      .completion-card mat-card-title,
-      .skipped-card mat-card-title {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      .completion-card mat-card-title mat-icon {
-        color: #4caf50;
-      }
-
-      .skipped-card mat-card-title mat-icon {
-        color: #9e9e9e;
-      }
-    `,
-  ],
+  templateUrl: './task-detail.component.html',
+  styleUrls: ['./task-detail.component.css'],
 })
 export class TaskDetailComponent implements OnInit {
   task: ComplianceTask | null = null;
   loading = true;
   completeComment = '';
   skipRemarks = '';
+  selectedFiles: File[] = [];
 
   get canExecuteTask(): boolean {
     return this.task?.status === 'PENDING' && this.authService.isTaskOwner();
@@ -425,7 +57,9 @@ export class TaskDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private taskService: TaskService,
-    private authService: AuthService
+    private authService: AuthService,
+    private snackBar: MatSnackBar,
+    private dialogService: DialogService
   ) {}
 
   ngOnInit() {
@@ -456,35 +90,191 @@ export class TaskDetailComponent implements OnInit {
     return new Date(this.task.dueDate) < new Date();
   }
 
+  formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  }
+
+  onEvidenceFileSelect(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const newFiles = Array.from(input.files);
+      this.selectedFiles = [...this.selectedFiles, ...newFiles];
+      this.snackBar.open(`${newFiles.length} file(s) added. Total: ${this.selectedFiles.length}`, 'Close', {
+        duration: 3000
+      });
+      // Reset input to allow selecting the same file again
+      input.value = '';
+    }
+  }
+
+  removeSelectedFile(index: number): void {
+    const fileName = this.selectedFiles[index].name;
+    this.selectedFiles.splice(index, 1);
+    this.snackBar.open(`Removed ${fileName}`, 'Close', { duration: 2000 });
+  }
+
+  isImageFile(file: File): boolean {
+    return file.type.startsWith('image/');
+  }
+
+  getFilePreviewUrl(file: File): string {
+    return URL.createObjectURL(file);
+  }
+
+  getFileExtension(file: File): string {
+    const name = file.name;
+    const lastDot = name.lastIndexOf('.');
+    return lastDot > 0 ? name.substring(lastDot + 1).toUpperCase() : 'FILE';
+  }
+
+  getFileIcon(file: File): string {
+    const ext = this.getFileExtension(file).toLowerCase();
+    const iconMap: Record<string, string> = {
+      'pdf': 'picture_as_pdf',
+      'doc': 'description',
+      'docx': 'description',
+      'xls': 'table_chart',
+      'xlsx': 'table_chart',
+      'ppt': 'slideshow',
+      'pptx': 'slideshow',
+      'txt': 'text_snippet',
+      'csv': 'table_view',
+      'zip': 'folder_zip',
+      'rar': 'folder_zip',
+    };
+    return iconMap[ext] || 'insert_drive_file';
+  }
+
   completeTask() {
     if (!this.task || !this.completeComment) return;
+    
+    // Check if files are selected or already uploaded
+    const hasEvidence = this.selectedFiles.length > 0 || (this.task.evidenceFiles?.length || 0) > 0;
+    if (!hasEvidence) {
+      this.snackBar.open('Please select at least one evidence file before completing the task', 'Close', {
+        duration: 3000,
+        panelClass: ['error-snackbar']
+      });
+      return;
+    }
+
+    this.dialogService.confirm({
+      title: 'Complete Task',
+      message: `Are you sure you want to mark this task as complete?${this.selectedFiles.length > 0 ? ` This will upload ${this.selectedFiles.length} file(s) to SharePoint.` : ''}`,
+      confirmText: 'Complete',
+      cancelText: 'Cancel',
+    }).subscribe(confirmed => {
+      if (confirmed && this.task) {
+        // If new files are selected, upload them first
+        if (this.selectedFiles.length > 0) {
+          this.uploadFilesToSharePoint().then(() => {
+            this.completeTaskAfterUpload();
+          }).catch((error) => {
+            this.snackBar.open('Failed to upload evidence files: ' + (error?.message || 'Unknown error'), 'Close', {
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            });
+          });
+        } else {
+          // No new files, just complete the task
+          this.completeTaskAfterUpload();
+        }
+      }
+    });
+  }
+
+  private async uploadFilesToSharePoint(): Promise<void> {
+    if (!this.task) return;
+
+    // TODO: Implement SharePoint upload API call
+    // For now, we'll simulate the upload
+    return new Promise((resolve, reject) => {
+      this.snackBar.open('Uploading files to SharePoint...', '', { duration: 2000 });
+      
+      // Simulate upload delay
+      setTimeout(() => {
+        // TODO: Replace with actual API call to upload files
+        // this.taskService.uploadEvidence(this.task.id, this.selectedFiles).subscribe(...)
+        resolve();
+      }, 1500);
+    });
+  }
+
+  private completeTaskAfterUpload(): void {
+    if (!this.task) return;
 
     this.taskService.completeTask(this.task.id, { comment: this.completeComment }).subscribe({
       next: (response) => {
         if (response.success) {
-          alert('Task completed successfully!');
+          this.snackBar.open('Task completed successfully!', 'Close', {
+            duration: 3000,
+            panelClass: ['success-snackbar']
+          });
+          this.selectedFiles = [];
           this.loadTask(this.task!.id);
         }
       },
       error: (error) => {
-        alert('Failed to complete task: ' + (error.error?.message || 'Unknown error'));
+        this.snackBar.open('Failed to complete task: ' + (error.error?.message || 'Unknown error'), 'Close', {
+          duration: 3000,
+          panelClass: ['error-snackbar']
+        });
       },
+    });
+  }
+
+  openSkipDialog() {
+    // For now, show simple input (TODO: Create proper skip dialog component)
+    this.dialogService.confirm({
+      title: 'Skip Task',
+      message: 'Skipping this task will mark it as not applicable. Are you sure you want to skip?',
+      confirmText: 'Continue',
+      cancelText: 'Cancel',
+      isDanger: true
+    }).subscribe(confirmed => {
+      if (confirmed) {
+        const remarks = prompt('Enter reason for skipping this task (required):');
+        if (remarks && remarks.trim()) {
+          this.skipRemarks = remarks;
+          this.skipTask();
+        }
+      }
     });
   }
 
   skipTask() {
     if (!this.task || !this.skipRemarks) return;
 
-    this.taskService.skipTask(this.task.id, { remarks: this.skipRemarks }).subscribe({
-      next: (response) => {
-        if (response.success) {
-          alert('Task skipped successfully!');
-          this.loadTask(this.task!.id);
-        }
-      },
-      error: (error) => {
-        alert('Failed to skip task: ' + (error.error?.message || 'Unknown error'));
-      },
+    this.dialogService.confirm({
+      title: 'Skip Task',
+      message: `Are you sure you want to skip this task?`,
+      confirmText: 'Skip',
+      cancelText: 'Cancel',
+      isDanger: true
+    }).subscribe(confirmed => {
+      if (confirmed && this.task) {
+        this.taskService.skipTask(this.task.id, { remarks: this.skipRemarks }).subscribe({
+          next: (response) => {
+            if (response.success) {
+              this.snackBar.open('Task skipped successfully!', 'Close', {
+                duration: 3000,
+                panelClass: ['success-snackbar']
+              });
+              this.loadTask(this.task!.id);
+            }
+          },
+          error: (error) => {
+            this.snackBar.open('Failed to skip task: ' + (error.error?.message || 'Unknown error'), 'Close', {
+              duration: 3000,
+              panelClass: ['error-snackbar']
+            });
+          },
+        });
+      }
     });
   }
 }

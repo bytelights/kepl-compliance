@@ -20,8 +20,8 @@ export class DashboardController {
 
   @Get('reviewer')
   @Roles('reviewer', 'admin')
-  async getReviewerDashboard() {
-    const data = await this.dashboardService.getReviewerDashboard();
+  async getReviewerDashboard(@CurrentUser() user: JwtPayload) {
+    const data = await this.dashboardService.getReviewerDashboard(user.sub, user.role);
     return { success: true, data };
   }
 

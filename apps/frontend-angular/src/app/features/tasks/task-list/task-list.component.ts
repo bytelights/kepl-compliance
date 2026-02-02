@@ -15,9 +15,12 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatMenuModule } from '@angular/material/menu';
 import { TaskService } from '../../../core/services/task.service';
 import { MasterDataService } from '../../../core/services/master-data.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { DialogService } from '../../../shared/services/dialog.service';
 import { ComplianceTask, Entity, Department, Law } from '../../../core/models';
 
 @Component({
@@ -41,6 +44,8 @@ import { ComplianceTask, Entity, Department, Law } from '../../../core/models';
     MatProgressSpinnerModule,
     MatTooltipModule,
     MatToolbarModule,
+    MatSnackBarModule,
+    MatMenuModule,
   ],
   templateUrl: './task-list.component.html',
   styleUrls: ['./task-list.component.css'],
@@ -84,7 +89,9 @@ export class TaskListComponent implements OnInit {
     private taskService: TaskService,
     private masterDataService: MasterDataService,
     private authService: AuthService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private snackBar: MatSnackBar,
+    private dialogService: DialogService
   ) {
     this.filterForm = this.fb.group({
       search: [''],
@@ -200,15 +207,40 @@ export class TaskListComponent implements OnInit {
     return new Date(task.dueDate) < new Date();
   }
 
+  openEvidenceModal(task: ComplianceTask): void {
+    // TODO: Open evidence modal with file upload and completion comment
+    this.snackBar.open('Evidence modal coming soon!', 'Close', {
+      duration: 3000
+    });
+  }
+
   deleteTask(task: ComplianceTask) {
-    if (confirm(`Are you sure you want to delete task "${task.title}"?`)) {
-      this.taskService.deleteTask(task.id).subscribe({
-        next: (response) => {
-          if (response.success) {
-            this.loadTasks();
+    this.dialogService.confirm({
+      title: 'Delete Task',
+      message: `Are you sure you want to delete task "${task.title}"?`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      isDanger: true
+    }).subscribe(confirmed => {
+      if (confirmed) {
+        this.taskService.deleteTask(task.id).subscribe({
+          next: (response) => {
+            if (response.success) {
+              this.snackBar.open('Task deleted successfully', 'Close', {
+                duration: 3000,
+                panelClass: ['success-snackbar']
+              });
+              this.loadTasks();
+            }
+          },
+          error: () => {
+            this.snackBar.open('Failed to delete task', 'Close', {
+              duration: 3000,
+              panelClass: ['error-snackbar']
+            });
           }
-        },
-      });
-    }
+        });
+      }
+    });
   }
 }

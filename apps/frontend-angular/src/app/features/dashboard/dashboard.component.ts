@@ -45,9 +45,9 @@ export class DashboardComponent implements OnInit {
   taskColumns = ['complianceId', 'title', 'entity', 'dueDate', 'status', 'actions'];
 
   // Chart configurations
-  public doughnutChartType: ChartType = 'doughnut';
-  public barChartType: ChartType = 'bar';
-  public lineChartType: ChartType = 'line';
+  public doughnutChartType = 'doughnut' as const;
+  public barChartType = 'bar' as const;
+  public lineChartType = 'line' as const;
   
   public taskOwnerChartData: ChartData<'doughnut'> = {
     labels: [],
@@ -58,6 +58,17 @@ export class DashboardComponent implements OnInit {
     labels: [],
     datasets: []
   };
+  
+  public adminDepartmentChartData: ChartData<'bar'> = {
+    labels: [],
+    datasets: []
+  };
+  
+  public adminOwnerChartData: ChartData<'bar'> = {
+    labels: [],
+    datasets: []
+  };
+  
   
   public reviewerEntityChartData: ChartData<'bar'> = {
     labels: [],
@@ -76,8 +87,111 @@ export class DashboardComponent implements OnInit {
       legend: {
         display: true,
         position: 'bottom',
+        labels: {
+          usePointStyle: true,
+          padding: 15,
+          font: {
+            size: 12,
+            family: "'Roboto', sans-serif"
+          }
+        }
       },
+      tooltip: {
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        padding: 12,
+        titleFont: {
+          size: 14
+        },
+        bodyFont: {
+          size: 13
+        },
+        cornerRadius: 6
+      }
     },
+  };
+
+  public doughnutChartOptions: ChartConfiguration<'doughnut'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '70%',
+    plugins: {
+      legend: {
+        display: true,
+        position: 'bottom',
+        labels: {
+          usePointStyle: true,
+          padding: 15,
+          font: {
+            size: 12,
+            family: "'Roboto', sans-serif"
+          }
+        }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        padding: 12,
+        titleFont: {
+          size: 14
+        },
+        bodyFont: {
+          size: 13
+        },
+        cornerRadius: 6
+      }
+    },
+  };
+
+  public barChartOptions: ChartConfiguration<'bar'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'bottom',
+        labels: {
+          usePointStyle: true,
+          padding: 15,
+          font: {
+            size: 12,
+            family: "'Roboto', sans-serif"
+          }
+        }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        padding: 12,
+        titleFont: {
+          size: 14
+        },
+        bodyFont: {
+          size: 13
+        },
+        cornerRadius: 6
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0, 0, 0, 0.05)'
+        },
+        ticks: {
+          font: {
+            size: 11
+          }
+        }
+      },
+      x: {
+        grid: {
+          display: false
+        },
+        ticks: {
+          font: {
+            size: 11
+          }
+        }
+      }
+    }
   };
 
   constructor(
@@ -147,8 +261,9 @@ export class DashboardComponent implements OnInit {
       labels: ['Pending', 'Overdue', 'Completed'],
       datasets: [{
         data: [pending, overdue, completed],
-        backgroundColor: ['#FFA726', '#EF5350', '#66BB6A'],
-        borderWidth: 0
+        backgroundColor: ['#FF9800', '#f44336', '#66BB6A'],
+        borderWidth: 0,
+        hoverOffset: 8
       }]
     };
   }
@@ -156,6 +271,7 @@ export class DashboardComponent implements OnInit {
   prepareAdminCharts(): void {
     if (!this.adminData) return;
     
+    // Status distribution chart
     this.adminStatusChartData = {
       labels: ['Pending', 'Completed', 'Overdue'],
       datasets: [{
@@ -164,10 +280,62 @@ export class DashboardComponent implements OnInit {
           this.adminData.completedTasks,
           this.adminData.overdueTasks
         ],
-        backgroundColor: ['#FFA726', '#66BB6A', '#EF5350'],
-        borderWidth: 0
+        backgroundColor: ['#FF9800', '#66BB6A', '#f44336'],
+        borderWidth: 0,
+        hoverOffset: 8
       }]
     };
+    
+    // Department stats chart
+    this.adminDepartmentChartData = {
+      labels: this.adminData.departmentStats?.map(d => d.departmentName) || [],
+      datasets: [
+        {
+          label: 'Pending',
+          data: this.adminData.departmentStats?.map(d => d.pendingCount) || [],
+          backgroundColor: '#FF9800',
+          borderRadius: 4
+        },
+        {
+          label: 'Completed',
+          data: this.adminData.departmentStats?.map(d => d.completedCount) || [],
+          backgroundColor: '#66BB6A',
+          borderRadius: 4
+        },
+        {
+          label: 'Overdue',
+          data: this.adminData.departmentStats?.map(d => d.overdueCount) || [],
+          backgroundColor: '#f44336',
+          borderRadius: 4
+        }
+      ]
+    };
+    
+    // Owner (assigned person) stats chart
+    this.adminOwnerChartData = {
+      labels: this.adminData.ownerStats?.map(o => o.ownerName) || [],
+      datasets: [
+        {
+          label: 'Pending',
+          data: this.adminData.ownerStats?.map(o => o.pendingCount) || [],
+          backgroundColor: '#FF9800',
+          borderRadius: 4
+        },
+        {
+          label: 'Completed',
+          data: this.adminData.ownerStats?.map(o => o.completedCount) || [],
+          backgroundColor: '#66BB6A',
+          borderRadius: 4
+        },
+        {
+          label: 'Overdue',
+          data: this.adminData.ownerStats?.map(o => o.overdueCount) || [],
+          backgroundColor: '#f44336',
+          borderRadius: 4
+        }
+      ]
+    };
+    
   }
 
   prepareReviewerCharts(): void {
@@ -180,17 +348,20 @@ export class DashboardComponent implements OnInit {
         {
           label: 'Pending',
           data: this.reviewerData.entityStats?.map(e => e.pendingCount) || [],
-          backgroundColor: '#FFA726',
+          backgroundColor: '#FF9800',
+          borderRadius: 4
         },
         {
           label: 'Completed',
           data: this.reviewerData.entityStats?.map(e => e.completedCount) || [],
           backgroundColor: '#66BB6A',
+          borderRadius: 4
         },
         {
           label: 'Overdue',
           data: this.reviewerData.entityStats?.map(e => e.overdueCount) || [],
-          backgroundColor: '#EF5350',
+          backgroundColor: '#f44336',
+          borderRadius: 4
         }
       ]
     };
@@ -202,17 +373,20 @@ export class DashboardComponent implements OnInit {
         {
           label: 'Pending',
           data: this.reviewerData.departmentStats?.map(d => d.pendingCount) || [],
-          backgroundColor: '#FFA726',
+          backgroundColor: '#FF9800',
+          borderRadius: 4
         },
         {
           label: 'Completed',
           data: this.reviewerData.departmentStats?.map(d => d.completedCount) || [],
           backgroundColor: '#66BB6A',
+          borderRadius: 4
         },
         {
           label: 'Overdue',
           data: this.reviewerData.departmentStats?.map(d => d.overdueCount) || [],
-          backgroundColor: '#EF5350',
+          backgroundColor: '#f44336',
+          borderRadius: 4
         }
       ]
     };

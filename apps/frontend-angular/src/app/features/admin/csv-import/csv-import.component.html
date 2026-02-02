@@ -6,8 +6,8 @@
       <p class="page-subtitle">Import compliance tasks from CSV files</p>
     </div>
 
-    <!-- Upload Card -->
-    <mat-card class="content-card">
+    <!-- Upload Card (hidden during preview) -->
+    <mat-card class="content-card" *ngIf="!previewMode">
       <mat-card-header>
         <mat-card-title>
           <mat-icon>cloud_upload</mat-icon>
@@ -15,10 +15,12 @@
         </mat-card-title>
       </mat-card-header>
       <mat-card-content>
-        <div class="upload-area" (click)="fileInput.click()" [class.uploading]="uploading">
-          <mat-icon>cloud_upload</mat-icon>
-          <p>Click to select CSV file</p>
-          <span class="upload-hint">Supported format: .csv</span>
+        <div class="upload-area" (click)="fileInput.click()" [class.uploading]="uploading || selectingFile">
+          <mat-spinner *ngIf="selectingFile" diameter="40"></mat-spinner>
+          <mat-icon *ngIf="!selectingFile">cloud_upload</mat-icon>
+          <p *ngIf="!selectingFile">Click to select CSV file</p>
+          <p *ngIf="selectingFile">Loading file...</p>
+          <span class="upload-hint" *ngIf="!selectingFile">Supported format: .csv</span>
           <input
             #fileInput
             type="file"
@@ -28,10 +30,13 @@
           />
         </div>
 
-        <div *ngIf="selectedFile" class="file-info">
+        <div *ngIf="selectedFile && !selectingFile" class="file-info">
           <mat-icon>description</mat-icon>
-          <span>{{ selectedFile.name }}</span>
-          <button mat-icon-button (click)="clearFile()">
+          <div class="file-details">
+            <span class="file-name">{{ selectedFile.name }}</span>
+            <span class="file-size">{{ formatFileSize(selectedFile.size) }}</span>
+          </div>
+          <button mat-icon-button (click)="clearFile()" matTooltip="Remove file">
             <mat-icon>close</mat-icon>
           </button>
         </div>
@@ -62,8 +67,77 @@
       </mat-card-content>
     </mat-card>
 
+    <!-- Preview Grid -->
+    <mat-card class="content-card preview-card" *ngIf="previewMode && previewData">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>visibility</mat-icon>
+          CSV Preview - {{ previewData.job.fileName }}
+        </mat-card-title>
+        <button mat-icon-button (click)="closePreview()" matTooltip="Close preview">
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="preview-stats">
+          <div class="stat-item success">
+            <mat-icon>check_circle</mat-icon>
+            <span class="stat-label">Valid Rows</span>
+            <span class="stat-value">{{ previewData.successRows || 0 }}</span>
+          </div>
+          <div class="stat-item error">
+            <mat-icon>error</mat-icon>
+            <span class="stat-label">Error Rows</span>
+            <span class="stat-value">{{ previewData.failedRows || 0 }}</span>
+          </div>
+          <div class="stat-item total">
+            <mat-icon>insert_chart</mat-icon>
+            <span class="stat-label">Total Rows</span>
+            <span class="stat-value">{{ previewData.totalRows || 0 }}</span>
+          </div>
+        </div>
+
+        <div class="preview-note">
+          <mat-icon>info</mat-icon>
+          <span>Showing first 100 rows. Valid rows will be imported when you click "Import".</span>
+        </div>
+
+        <div class="preview-table-container">
+          <table mat-table [dataSource]="previewData.job.rows || []" class="preview-table">
+            <ng-container *ngFor="let column of previewColumns" [matColumnDef]="column">
+              <th mat-header-cell *matHeaderCellDef>{{ column === 'rowNumber' ? '#' : (column === 'status' ? 'Status' : column) }}</th>
+              <td mat-cell *matCellDef="let row" [class.error-row]="!row.success">
+                <span *ngIf="column === 'status'" [class.status-icon]="true" [class.valid]="row.success" [class.invalid]="!row.success">
+                  {{ row.success ? '✓' : '✗' }}
+                </span>
+                <span *ngIf="column !== 'status'">{{ getRowValue(row, column) }}</span>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="previewColumns; sticky: true"></tr>
+            <tr mat-row *matRowDef="let row; columns: previewColumns;" [matTooltip]="row.errorMsg || ''"></tr>
+          </table>
+        </div>
+
+        <div class="preview-actions">
+          <button mat-stroked-button (click)="closePreview()">
+            <mat-icon>close</mat-icon>
+            Cancel
+          </button>
+          <button 
+            mat-raised-button 
+            color="primary" 
+            (click)="commit()"
+            [disabled]="!previewData.successRows || previewData.successRows === 0">
+            <mat-icon>check</mat-icon>
+            Import {{ previewData.successRows || 0 }} Valid Rows
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
     <!-- Import History -->
-    <mat-card class="content-card">
+    <mat-card class="content-card" *ngIf="!previewMode">
       <mat-card-header>
         <mat-card-title>Import History</mat-card-title>
         <button mat-icon-button (click)="loadHistory()" matTooltip="Refresh">
@@ -104,7 +178,7 @@
             <ng-container matColumnDef="rows">
               <th mat-header-cell *matHeaderCellDef>Rows</th>
               <td mat-cell *matCellDef="let job">
-                Total: {{ job.totalRows }} | Valid: {{ job.validRows }} | Errors: {{ job.errorRows }}
+                Total: {{ job.totalRows }} | Valid: {{ job.successRows }} | Errors: {{ job.failedRows }}
               </td>
             </ng-container>
 
@@ -116,6 +190,22 @@
             <ng-container matColumnDef="createdAt">
               <th mat-header-cell *matHeaderCellDef>Date</th>
               <td mat-cell *matCellDef="let job">{{ job.createdAt | date: 'MMM d, y h:mm a' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>Actions</th>
+              <td mat-cell *matCellDef="let job">
+                <button 
+                  mat-stroked-button 
+                  color="primary" 
+                  [routerLink]="['/tasks']" 
+                  *ngIf="job.mode === 'COMMIT' && job.status === 'COMPLETED'"
+                  matTooltip="View tasks created from this import">
+                  <mat-icon>visibility</mat-icon>
+                  View Tasks
+                </button>
+                <span *ngIf="job.mode === 'PREVIEW'" class="preview-note">Preview only - no tasks created</span>
+              </td>
             </ng-container>
 
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
@@ -133,8 +223,9 @@
           <div>
             <h3>CSV Import Instructions</h3>
             <ul>
-              <li><strong>Preview Mode:</strong> Validates the CSV without creating tasks. Use this to check for errors first</li>
-              <li><strong>Import Mode:</strong> Creates tasks in the database. Make sure to preview first</li>
+              <li><strong>Preview Mode:</strong> Validates the CSV without creating tasks. Use this to check for errors first. No tasks are created in preview mode.</li>
+              <li><strong>Import Mode:</strong> Creates compliance tasks in the database. Tasks will appear in the "All Tasks" page.</li>
+              <li><strong>View Tasks:</strong> After import completes, click "View Tasks" button to see the created tasks.</li>
               <li><strong>Required Columns:</strong> complianceId, title, entityId, departmentId, lawId, ownerId, reviewerId, dueDate</li>
               <li><strong>Optional Columns:</strong> description, frequency, impact, status</li>
             </ul>

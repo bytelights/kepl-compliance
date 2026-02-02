@@ -1,0 +1,53 @@
+.dialog-container {
+  padding: 0;
+}
+
+.dialog-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.dialog-header.danger {
+  background-color: #fff3e0;
+  border-bottom-color: #ff9800;
+}
+
+.dialog-header mat-icon {
+  color: #1976d2;
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+}
+
+.dialog-header.danger mat-icon {
+  color: #ff6b00;
+}
+
+.dialog-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+mat-dialog-content {
+  padding: 24px !important;
+  min-height: 60px;
+}
+
+.dialog-message {
+  margin: 0;
+  font-size: 14px;
+  color: #546e7a;
+  line-height: 1.6;
+}
+
+mat-dialog-actions {
+  padding: 16px 24px !important;
+  border-top: 1px solid #e0e0e0;
+  margin: 0 !important;
+  min-height: auto !important;
+}

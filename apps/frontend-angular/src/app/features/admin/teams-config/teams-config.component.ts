@@ -12,6 +12,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
+import { DialogService } from '../../../shared/services/dialog.service';
 
 @Component({
   selector: 'app-teams-config',
@@ -42,7 +43,8 @@ export class TeamsConfigComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private http: HttpClient,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private dialogService: DialogService
   ) {
     this.configForm = this.fb.group({
       webhookUrl: ['', [Validators.required, Validators.pattern(/^https:\/\/.*\.webhook\.office\.com\/.*$/)]],
@@ -129,7 +131,15 @@ export class TeamsConfigComponent implements OnInit {
   }
 
   triggerWeeklyReport() {
-    if (confirm('Send weekly compliance report now?')) {
+    this.dialogService.confirm({
+      title: 'Send Weekly Report',
+      message: 'Send weekly compliance report now?',
+      confirmText: 'Send',
+      cancelText: 'Cancel',
+      isDanger: false
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
+
       this.http.post<any>(`${environment.apiUrl}/reports/weekly/trigger`, {}).subscribe({
         next: (response) => {
           if (response.success) {
@@ -144,6 +154,6 @@ export class TeamsConfigComponent implements OnInit {
           });
         },
       });
-    }
+    });
   }
 }

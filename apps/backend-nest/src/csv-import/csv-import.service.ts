@@ -111,11 +111,24 @@ export class CsvImportService {
       },
     });
 
+    // Fetch the job with all rows for preview
+    const jobWithRows = await this.prisma.csvImportJob.findUnique({
+      where: { id: job.id },
+      include: {
+        rows: {
+          orderBy: { rowNumber: 'asc' },
+          take: mode === 'preview' ? 100 : undefined, // Limit preview to 100 rows for performance
+        },
+        uploader: { select: { name: true, email: true } },
+      },
+    });
+
     return {
       jobId: job.id,
       totalRows: rows.length,
       successRows: successCount,
       failedRows: failedCount,
+      job: jobWithRows,
       errors: results
         .filter((r) => !r.valid)
         .map((r, _i) => ({
