@@ -6,8 +6,6 @@ import { TeamsService } from '../reports/teams.service';
 import { ReportsService } from '../reports/reports.service';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 
 @Controller('integrations')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -30,7 +28,12 @@ export class IntegrationsController {
   @Put('sharepoint')
   async updateSharePointConfig(
     @Body()
-    config: { siteId: string; driveId: string; baseFolderName?: string },
+    config: {
+      tenantId?: string;
+      siteId: string;
+      driveId: string;
+      baseFolderName?: string;
+    },
   ) {
     await this.integrationsService.updateSharePointConfig(config);
     return { success: true, message: 'SharePoint configuration updated' };
@@ -54,6 +57,11 @@ export class IntegrationsController {
     @Body()
     config: {
       webhookUrl: string;
+      channelName?: string;
+      sendDailySummary?: boolean;
+      alertOverdue?: boolean;
+      notifyCompletion?: boolean;
+      weeklyReports?: boolean;
       weeklyReportDay?: number;
       weeklyReportTime?: string;
       timezone?: string;

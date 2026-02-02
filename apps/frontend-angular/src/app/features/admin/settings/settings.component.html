@@ -22,38 +22,43 @@
               
               <!-- SharePoint Form -->
               <div class="config-form-card">
+                <div class="loading-overlay" *ngIf="loading">
+                  <mat-spinner diameter="40"></mat-spinner>
+                </div>
                 <form class="config-form">
                   <mat-form-field appearance="outline" class="full-width">
                     <mat-label>Tenant ID</mat-label>
-                    <input matInput placeholder="Your Microsoft 365 tenant ID">
+                    <input matInput [(ngModel)]="sharepointConfig.tenantId" name="tenantId" placeholder="Your Microsoft 365 tenant ID">
                     <mat-hint>Azure Portal → Azure Active Directory → Properties → Tenant ID</mat-hint>
                   </mat-form-field>
 
                   <mat-form-field appearance="outline" class="full-width">
                     <mat-label>Site ID</mat-label>
-                    <input matInput placeholder="SharePoint site ID">
+                    <input matInput [(ngModel)]="sharepointConfig.siteId" name="siteId" placeholder="SharePoint site ID">
                     <mat-hint>SharePoint site ID where documents will be stored</mat-hint>
                   </mat-form-field>
 
                   <mat-form-field appearance="outline" class="full-width">
                     <mat-label>Drive ID</mat-label>
-                    <input matInput placeholder="Document library drive ID">
+                    <input matInput [(ngModel)]="sharepointConfig.driveId" name="driveId" placeholder="Document library drive ID">
                     <mat-hint>Document library drive ID</mat-hint>
                   </mat-form-field>
 
                   <mat-form-field appearance="outline" class="full-width">
                     <mat-label>Base Folder Name</mat-label>
-                    <input matInput value="Compliance-Documents">
+                    <input matInput [(ngModel)]="sharepointConfig.baseFolderName" name="baseFolderName" placeholder="Compliance-Documents">
                     <mat-hint>Root folder for compliance documents</mat-hint>
                   </mat-form-field>
 
                   <div class="button-row">
-                    <button mat-raised-button color="primary">
-                      <mat-icon>save</mat-icon>
+                    <button mat-raised-button color="primary" type="button" (click)="saveSharePointConfig()" [disabled]="sharepointSaving">
+                      <mat-spinner diameter="18" *ngIf="sharepointSaving"></mat-spinner>
+                      <mat-icon *ngIf="!sharepointSaving">save</mat-icon>
                       Save Configuration
                     </button>
-                    <button mat-stroked-button type="button">
-                      <mat-icon>check_circle</mat-icon>
+                    <button mat-stroked-button type="button" (click)="testSharePointConnection()" [disabled]="sharepointTesting">
+                      <mat-spinner diameter="18" *ngIf="sharepointTesting"></mat-spinner>
+                      <mat-icon *ngIf="!sharepointTesting">check_circle</mat-icon>
                       Test Connection
                     </button>
                   </div>
@@ -76,34 +81,39 @@
               
               <!-- Teams Form -->
               <div class="config-form-card">
+                <div class="loading-overlay" *ngIf="loading">
+                  <mat-spinner diameter="40"></mat-spinner>
+                </div>
                 <form class="config-form">
                   <mat-form-field appearance="outline" class="full-width">
                     <mat-label>Webhook URL</mat-label>
-                    <input matInput placeholder="https://outlook.office.com/webhook/...">
+                    <input matInput [(ngModel)]="teamsConfig.webhookUrl" name="webhookUrl" placeholder="https://outlook.office.com/webhook/...">
                     <mat-hint>Teams channel incoming webhook URL</mat-hint>
                   </mat-form-field>
 
                   <mat-form-field appearance="outline" class="full-width">
                     <mat-label>Channel Name</mat-label>
-                    <input matInput placeholder="Compliance Updates">
+                    <input matInput [(ngModel)]="teamsConfig.channelName" name="channelName" placeholder="Compliance Updates">
                     <mat-hint>Name of the Teams channel for notifications</mat-hint>
                   </mat-form-field>
 
                   <div class="checkbox-group">
                     <h4>Notification Settings</h4>
-                    <mat-checkbox>Send daily compliance summary</mat-checkbox>
-                    <mat-checkbox>Alert on overdue tasks</mat-checkbox>
-                    <mat-checkbox>Notify on task completion</mat-checkbox>
-                    <mat-checkbox>Weekly compliance reports</mat-checkbox>
+                    <mat-checkbox [(ngModel)]="teamsConfig.sendDailySummary" name="sendDailySummary">Send daily compliance summary</mat-checkbox>
+                    <mat-checkbox [(ngModel)]="teamsConfig.alertOverdue" name="alertOverdue">Alert on overdue tasks</mat-checkbox>
+                    <mat-checkbox [(ngModel)]="teamsConfig.notifyCompletion" name="notifyCompletion">Notify on task completion</mat-checkbox>
+                    <mat-checkbox [(ngModel)]="teamsConfig.weeklyReports" name="weeklyReports">Weekly compliance reports</mat-checkbox>
                   </div>
 
                   <div class="button-row">
-                    <button mat-raised-button color="primary">
-                      <mat-icon>save</mat-icon>
+                    <button mat-raised-button color="primary" type="button" (click)="saveTeamsConfig()" [disabled]="teamsSaving">
+                      <mat-spinner diameter="18" *ngIf="teamsSaving"></mat-spinner>
+                      <mat-icon *ngIf="!teamsSaving">save</mat-icon>
                       Save Configuration
                     </button>
-                    <button mat-stroked-button type="button">
-                      <mat-icon>send</mat-icon>
+                    <button mat-stroked-button type="button" (click)="testTeamsWebhook()" [disabled]="teamsTesting">
+                      <mat-spinner diameter="18" *ngIf="teamsTesting"></mat-spinner>
+                      <mat-icon *ngIf="!teamsTesting">send</mat-icon>
                       Send Test Message
                     </button>
                   </div>

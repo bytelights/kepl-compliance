@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { IntegrationsService } from '../integrations/integrations.service';
 
 @Injectable()
 export class DashboardService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private integrationsService: IntegrationsService,
+  ) {}
 
   async getTaskOwnerDashboard(userId: string) {
     const today = new Date();
@@ -313,6 +317,22 @@ export class DashboardService {
       dbConnected = false;
     }
 
+    // Check SharePoint configuration
+    const sharePointConfig = await this.integrationsService.getSharePointConfig();
+    const sharePointConnected = !!(
+      sharePointConfig.siteId &&
+      sharePointConfig.driveId &&
+      sharePointConfig.siteId.trim() !== '' &&
+      sharePointConfig.driveId.trim() !== ''
+    );
+
+    // Check Teams configuration
+    const teamsConfig = await this.integrationsService.getTeamsConfig();
+    const teamsConnected = !!(
+      teamsConfig.webhookUrl &&
+      teamsConfig.webhookUrl.trim() !== ''
+    );
+
     return {
       totalTasks,
       pendingTasks,
@@ -324,8 +344,8 @@ export class DashboardService {
       ownerStats: ownerStatsWithNames,
       systemHealth: {
         dbConnected,
-        sharePointConnected: true, // Would need actual check
-        teamsConnected: true, // Would need actual check
+        sharePointConnected,
+        teamsConnected,
       },
     };
   }

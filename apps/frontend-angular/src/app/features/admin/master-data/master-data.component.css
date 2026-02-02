@@ -148,6 +148,93 @@ td.mat-cell {
   background-color: #f5f7fa;
 }
 
+/* Template Form */
+.template-form-card {
+  background-color: #f8f9fa;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.template-form-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 20px 0;
+}
+
+.template-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.button-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.button-row button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Templates Table */
+.templates-table .template-name {
+  font-weight: 500;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.templates-table .template-title {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.impact-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.impact-LOW {
+  background-color: #e0f2fe;
+  color: #0369a1;
+}
+
+.impact-MEDIUM {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.impact-HIGH {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.impact-CRITICAL {
+  background-color: #fce7f3;
+  color: #be123c;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .page-container {
@@ -169,5 +256,9 @@ td.mat-cell {
   .add-form button {
     width: 100%;
     margin-top: 0;
+  }
+
+  .form-row-2 {
+    grid-template-columns: 1fr;
   }
 }

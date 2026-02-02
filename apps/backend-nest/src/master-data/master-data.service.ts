@@ -5,7 +5,6 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateMasterDataDto } from './dto/create-master-data.dto';
 import { UpdateMasterDataDto } from './dto/update-master-data.dto';
 
 type MasterDataType =
@@ -74,8 +73,51 @@ export class MasterDataService {
     }
   }
 
-  async create(type: MasterDataType, createDto: CreateMasterDataDto) {
-    // Validate name
+  async create(type: MasterDataType, createDto: any) {
+    // For compliances_master, validate differently
+    if (type === 'compliances_master') {
+      // Validate compliance master specific fields
+      if (
+        !createDto.name ||
+        !createDto.title ||
+        !createDto.lawId ||
+        !createDto.departmentId ||
+        !createDto.complianceId
+      ) {
+        throw new BadRequestException(
+          'Missing required fields for compliance master',
+        );
+      }
+
+      try {
+        return await this.prisma.complianceMaster.create({
+          data: {
+            complianceId: createDto.complianceId,
+            name: createDto.name,
+            title: createDto.title,
+            description: createDto.description,
+            lawId: createDto.lawId,
+            departmentId: createDto.departmentId,
+            frequency: createDto.frequency,
+            impact: createDto.impact,
+          },
+          include: {
+            law: true,
+            department: true,
+          },
+        });
+      } catch (error: any) {
+        console.error(`Error creating compliance master:`, error);
+        if (error?.code === 'P2002') {
+          throw new ConflictException(
+            `Compliance master with this name already exists`,
+          );
+        }
+        throw error;
+      }
+    }
+
+    // For simple master data (entities, departments, laws)
     if (!createDto.name || !createDto.name.trim()) {
       throw new BadRequestException('Name cannot be empty');
     }
@@ -91,23 +133,24 @@ export class MasterDataService {
     try {
       switch (type) {
         case 'entities':
-          return await this.prisma.entity.create({ data: { name: trimmedName } });
+          return await this.prisma.entity.create({
+            data: { name: trimmedName },
+          });
         case 'departments':
-          return await this.prisma.department.create({ data: { name: trimmedName } });
+          return await this.prisma.department.create({
+            data: { name: trimmedName },
+          });
         case 'laws':
           return await this.prisma.law.create({ data: { name: trimmedName } });
-        case 'compliances_master':
-          // ComplianceMaster requires more fields, not supported by simple create
-          throw new BadRequestException(
-            'Use dedicated compliance master endpoints (not yet implemented)',
-          );
         default:
           throw new BadRequestException(`Unknown master data type: ${type}`);
       }
     } catch (error: any) {
       console.error(`Error creating ${type}:`, error);
       if (error?.code === 'P2002') {
-        throw new ConflictException(`${type} with name "${trimmedName}" already exists`);
+        throw new ConflictException(
+          `${type} with name "${trimmedName}" already exists`,
+        );
       }
       throw error;
     }
@@ -147,7 +190,11 @@ export class MasterDataService {
       case 'compliances_master':
         return this.prisma.complianceMaster.update({
           where: { id },
-          data: { name: updateDto.name },
+          data: updateDto,
+          include: {
+            law: true,
+            department: true,
+          },
         });
     }
   }

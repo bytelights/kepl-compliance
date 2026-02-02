@@ -29,12 +29,13 @@ export interface Law {
 export interface ComplianceMaster {
   id: string;
   complianceId: string;
+  name: string;
   title: string;
   description?: string;
   lawId: string;
   departmentId: string;
-  frequency: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
-  impact?: 'HIGH' | 'MEDIUM' | 'LOW';
+  frequency?: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY' | 'ONE_TIME';
+  impact?: 'HIGH' | 'MEDIUM' | 'LOW' | 'CRITICAL';
   law?: Law;
   department?: Department;
 }

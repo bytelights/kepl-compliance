@@ -190,6 +190,8 @@ export class TaskCreateComponent implements OnInit {
       this.taskForm.patchValue({
         title: '',
         description: '',
+        lawId: '',
+        departmentId: '',
         frequency: null,
         impact: null,
       });
@@ -200,8 +202,16 @@ export class TaskCreateComponent implements OnInit {
     if (master) {
       // Auto-fill from master template
       this.taskForm.patchValue({
-        title: master.name,
+        title: master.title,
         description: master.description || '',
+        lawId: master.lawId,
+        departmentId: master.departmentId,
+        frequency: master.frequency,
+        impact: master.impact,
+      });
+
+      this.snackBar.open('Template applied successfully', 'Close', {
+        duration: 2000,
       });
     }
   }

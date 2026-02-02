@@ -124,34 +124,40 @@ export class MasterDataController {
     return { success: true, data };
   }
 
+  @Get('compliances/:id')
+  async getCompliance(@Param('id') id: string) {
+    const data = await this.masterDataService.findById('compliances_master', id);
+    return { success: true, data };
+  }
+
   @Post('compliances')
   @Roles('admin')
-  async createCompliance(@Body() createDto: CreateMasterDataDto) {
+  async createCompliance(@Body() createDto: any) {
     const data = await this.masterDataService.create(
       'compliances_master',
       createDto,
     );
-    return { success: true, data, message: 'Compliance created successfully' };
+    return { success: true, data, message: 'Compliance template created successfully' };
   }
 
   @Patch('compliances/:id')
   @Roles('admin')
   async updateCompliance(
     @Param('id') id: string,
-    @Body() updateDto: UpdateMasterDataDto,
+    @Body() updateDto: any,
   ) {
     const data = await this.masterDataService.update(
       'compliances_master',
       id,
       updateDto,
     );
-    return { success: true, data, message: 'Compliance updated successfully' };
+    return { success: true, data, message: 'Compliance template updated successfully' };
   }
 
   @Delete('compliances/:id')
   @Roles('admin')
   async deleteCompliance(@Param('id') id: string) {
     await this.masterDataService.delete('compliances_master', id);
-    return { success: true, message: 'Compliance deleted successfully' };
+    return { success: true, message: 'Compliance template deleted successfully' };
   }
 }

@@ -74,30 +74,34 @@ export class IntegrationsService {
 
   // SharePoint config
   async updateSharePointConfig(config: {
+    tenantId?: string;
     siteId: string;
     driveId: string;
     baseFolderName?: string;
   }) {
     await Promise.all([
+      config.tenantId && this.setConfig('sharepoint_tenant_id', config.tenantId),
       this.setConfig('sharepoint_site_id', config.siteId),
       this.setConfig('sharepoint_drive_id', config.driveId),
       this.setConfig(
         'sharepoint_base_folder_name',
         config.baseFolderName || 'Compliance-Documents',
       ),
-    ]);
+    ].filter(Boolean));
   }
 
   async getSharePointConfig() {
-    const [siteId, driveId, baseFolderName] = await Promise.all([
+    const [tenantId, siteId, driveId, baseFolderName] = await Promise.all([
+      this.getConfig('sharepoint_tenant_id'),
       this.getConfig('sharepoint_site_id'),
       this.getConfig('sharepoint_drive_id'),
       this.getConfig('sharepoint_base_folder_name'),
     ]);
 
     return {
-      siteId,
-      driveId,
+      tenantId: tenantId || '',
+      siteId: siteId || '',
+      driveId: driveId || '',
       baseFolderName: baseFolderName || 'Compliance-Documents',
     };
   }
@@ -105,6 +109,11 @@ export class IntegrationsService {
   // Teams config
   async updateTeamsConfig(config: {
     webhookUrl: string;
+    channelName?: string;
+    sendDailySummary?: boolean;
+    alertOverdue?: boolean;
+    notifyCompletion?: boolean;
+    weeklyReports?: boolean;
     weeklyReportDay?: number;
     weeklyReportTime?: string;
     timezone?: string;
@@ -112,6 +121,11 @@ export class IntegrationsService {
     await Promise.all(
       [
         this.setConfig('teams_webhook_url', config.webhookUrl, true),
+        config.channelName && this.setConfig('teams_channel_name', config.channelName),
+        this.setConfig('teams_send_daily_summary', String(config.sendDailySummary ?? false)),
+        this.setConfig('teams_alert_overdue', String(config.alertOverdue ?? false)),
+        this.setConfig('teams_notify_completion', String(config.notifyCompletion ?? false)),
+        this.setConfig('teams_weekly_reports', String(config.weeklyReports ?? false)),
         config.weeklyReportDay !== undefined &&
           this.setConfig(
             'weekly_report_day_of_week',
@@ -125,15 +139,35 @@ export class IntegrationsService {
   }
 
   async getTeamsConfig() {
-    const [webhookUrl, dayOfWeek, time, timezone] = await Promise.all([
+    const [
+      webhookUrl,
+      channelName,
+      sendDailySummary,
+      alertOverdue,
+      notifyCompletion,
+      weeklyReports,
+      dayOfWeek,
+      time,
+      timezone,
+    ] = await Promise.all([
       this.getConfig('teams_webhook_url', true),
+      this.getConfig('teams_channel_name'),
+      this.getConfig('teams_send_daily_summary'),
+      this.getConfig('teams_alert_overdue'),
+      this.getConfig('teams_notify_completion'),
+      this.getConfig('teams_weekly_reports'),
       this.getConfig('weekly_report_day_of_week'),
       this.getConfig('weekly_report_time_hhmm'),
       this.getConfig('timezone'),
     ]);
 
     return {
-      webhookUrl,
+      webhookUrl: webhookUrl || '',
+      channelName: channelName || '',
+      sendDailySummary: sendDailySummary === 'true',
+      alertOverdue: alertOverdue === 'true',
+      notifyCompletion: notifyCompletion === 'true',
+      weeklyReports: weeklyReports === 'true',
       weeklyReportDay: dayOfWeek ? parseInt(dayOfWeek) : 1,
       weeklyReportTime: time || '09:00',
       timezone: timezone || 'UTC',

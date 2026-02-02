@@ -9,11 +9,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MasterDataService } from '../../../core/services/master-data.service';
-import { Entity, Department, Law } from '../../../core/models';
+import { Entity, Department, Law, ComplianceMaster } from '../../../core/models';
 import { DialogService } from '../../../shared/services/dialog.service';
 
 @Component({
@@ -30,6 +31,7 @@ import { DialogService } from '../../../shared/services/dialog.service';
     MatIconModule,
     MatFormFieldModule,
     MatInputModule,
+    MatSelectModule,
     MatToolbarModule,
     MatTooltipModule,
     MatSnackBarModule,
@@ -41,10 +43,13 @@ export class MasterDataComponent implements OnInit {
   entities: Entity[] = [];
   departments: Department[] = [];
   laws: Law[] = [];
+  complianceTemplates: ComplianceMaster[] = [];
 
   newEntity = '';
   newDepartment = '';
   newLaw = '';
+  newTemplate: Partial<ComplianceMaster> = {};
+  editingTemplate: ComplianceMaster | null = null;
 
   constructor(
     private masterDataService: MasterDataService,
@@ -72,6 +77,12 @@ export class MasterDataComponent implements OnInit {
     this.masterDataService.getLaws().subscribe({
       next: (response) => {
         if (response.success && response.data) this.laws = response.data;
+      },
+    });
+
+    this.masterDataService.getCompliances().subscribe({
+      next: (response) => {
+        if (response.success && response.data) this.complianceTemplates = response.data;
       },
     });
   }
@@ -198,6 +209,102 @@ export class MasterDataComponent implements OnInit {
         },
         error: (error) => {
           this.snackBar.open('Failed to delete law: ' + (error.error?.message || 'Unknown error'), 'Close', {
+            duration: 5000,
+          });
+        },
+      });
+    });
+  }
+
+  // ========== COMPLIANCE TEMPLATES ==========
+  isTemplateValid(): boolean {
+    return !!(
+      this.newTemplate.name?.trim() &&
+      this.newTemplate.complianceId?.trim() &&
+      this.newTemplate.title?.trim() &&
+      this.newTemplate.lawId &&
+      this.newTemplate.departmentId
+    );
+  }
+
+  saveTemplate() {
+    if (!this.isTemplateValid()) {
+      this.snackBar.open('Please fill all required fields', 'Close', { duration: 3000 });
+      return;
+    }
+
+    if (this.editingTemplate) {
+      // Update existing template
+      this.masterDataService.updateCompliance(this.editingTemplate.id, this.newTemplate).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.snackBar.open('Template updated successfully', 'Close', { duration: 3000 });
+            this.loadAll();
+            this.cancelEditTemplate();
+          }
+        },
+        error: (error) => {
+          this.snackBar.open('Failed to update template: ' + (error.error?.message || 'Unknown error'), 'Close', {
+            duration: 5000,
+          });
+        },
+      });
+    } else {
+      // Create new template
+      this.masterDataService.createCompliance(this.newTemplate).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.snackBar.open('Template created successfully', 'Close', { duration: 3000 });
+            this.loadAll();
+            this.newTemplate = {};
+          }
+        },
+        error: (error) => {
+          this.snackBar.open('Failed to create template: ' + (error.error?.message || 'Unknown error'), 'Close', {
+            duration: 5000,
+          });
+        },
+      });
+    }
+  }
+
+  editTemplate(template: ComplianceMaster) {
+    this.editingTemplate = template;
+    this.newTemplate = {
+      name: template.name,
+      complianceId: template.complianceId,
+      title: template.title,
+      description: template.description,
+      lawId: template.lawId,
+      departmentId: template.departmentId,
+      frequency: template.frequency,
+      impact: template.impact,
+    };
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  cancelEditTemplate() {
+    this.editingTemplate = null;
+    this.newTemplate = {};
+  }
+
+  deleteTemplate(template: ComplianceMaster) {
+    this.dialogService.confirm({
+      title: 'Delete Template',
+      message: `Delete template "${template.name}"? This will not affect existing tasks.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      isDanger: true
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
+
+      this.masterDataService.deleteCompliance(template.id).subscribe({
+        next: () => {
+          this.snackBar.open('Template deleted successfully', 'Close', { duration: 3000 });
+          this.loadAll();
+        },
+        error: (error) => {
+          this.snackBar.open('Failed to delete template: ' + (error.error?.message || 'Unknown error'), 'Close', {
             duration: 5000,
           });
         },
