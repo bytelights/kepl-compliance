@@ -137,16 +137,35 @@ export class AuthService {
   /**
    * DEV ONLY - Find or create a dev user for quick testing
    */
-  async findOrCreateDevUser(email: string): Promise<any> {
+  async findOrCreateDevUser(email: string, role: string = 'ADMIN'): Promise<any> {
     let user = await this.usersService.findByEmail(email);
+
+    // Map frontend role names to database role names
+    const roleMap: Record<string, 'admin' | 'reviewer' | 'task_owner'> = {
+      'ADMIN': 'admin',
+      'REVIEWER': 'reviewer',
+      'TASK_OWNER': 'task_owner',
+    };
+
+    const dbRole: 'admin' | 'reviewer' | 'task_owner' = roleMap[role] || 'admin';
+    const userName = role === 'ADMIN' ? 'Dev Admin' : 
+                     role === 'REVIEWER' ? 'Dev Reviewer' : 
+                     'Dev Task Owner';
 
     if (!user) {
       user = await this.usersService.create({
         email,
-        name: 'Dev User',
+        name: userName,
         msOid: 'dev-oid-' + Date.now(),
-        role: 'admin', // Give admin role for testing
+        role: dbRole,
       });
+    } else if (user.role !== dbRole) {
+      // Update name only (role updates should be done through user management)
+      user = await this.usersService.update(user.id, {
+        name: userName,
+      });
+      // Manually update role field for dev purposes
+      user.role = dbRole;
     }
 
     return user;

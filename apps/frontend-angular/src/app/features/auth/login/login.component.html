@@ -29,14 +29,32 @@
           Sign in with Microsoft
         </button>
 
-        <button 
-          *ngIf="!isProduction"
-          mat-stroked-button 
-          class="dev-login-button" 
-          (click)="devLogin()">
-          <mat-icon>code</mat-icon>
-          Skip Auth (Dev Only)
-        </button>
+        <div *ngIf="!isProduction" class="dev-login-section">
+          <p class="dev-login-title">Development Login (Skip Auth)</p>
+          <div class="dev-buttons-grid">
+            <button 
+              mat-stroked-button 
+              class="dev-login-button admin" 
+              (click)="devLogin('ADMIN')">
+              <mat-icon>admin_panel_settings</mat-icon>
+              Admin
+            </button>
+            <button 
+              mat-stroked-button 
+              class="dev-login-button reviewer" 
+              (click)="devLogin('REVIEWER')">
+              <mat-icon>rate_review</mat-icon>
+              Reviewer
+            </button>
+            <button 
+              mat-stroked-button 
+              class="dev-login-button task-owner" 
+              (click)="devLogin('TASK_OWNER')">
+              <mat-icon>assignment_ind</mat-icon>
+              Task Owner
+            </button>
+          </div>
+        </div>
 
         <p class="footer-text">Secure authentication powered by Microsoft</p>
       </div>

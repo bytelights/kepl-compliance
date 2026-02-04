@@ -106,14 +106,23 @@ export class AuthController {
    * DEV ONLY - Quick login bypass for UI testing
    */
   @Get('dev/login')
-  async devLogin(@Res() res: Response) {
+  async devLogin(@Query('role') role: string, @Res() res: Response) {
     if (this.configService.get('NODE_ENV') === 'production') {
       throw new UnauthorizedException('Dev login not available in production');
     }
 
     try {
-      // Create or get dev user
-      const user = await this.authService.findOrCreateDevUser('dev@test.com');
+      // Validate role
+      const validRoles = ['ADMIN', 'REVIEWER', 'TASK_OWNER'];
+      const userRole = validRoles.includes(role?.toUpperCase()) 
+        ? role.toUpperCase() 
+        : 'ADMIN';
+
+      // Create email based on role
+      const email = `dev-${userRole.toLowerCase()}@test.com`;
+      
+      // Create or get dev user with specified role
+      const user = await this.authService.findOrCreateDevUser(email, userRole);
       
       // Generate JWT token using injected JwtService
       const payload: JwtPayload = {

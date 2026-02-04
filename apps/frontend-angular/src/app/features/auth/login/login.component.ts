@@ -22,8 +22,8 @@ export class LoginComponent {
     this.authService.login();
   }
 
-  devLogin(): void {
-    window.location.href = `${environment.apiUrl}/auth/dev/login`;
+  devLogin(role: 'ADMIN' | 'REVIEWER' | 'TASK_OWNER' = 'ADMIN'): void {
+    window.location.href = `${environment.apiUrl}/auth/dev/login?role=${role}`;
   }
 }
 
