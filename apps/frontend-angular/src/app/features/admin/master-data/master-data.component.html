@@ -16,15 +16,41 @@
             Entities
           </ng-template>
           <div class="tab-content">
-            <div class="add-form">
-              <mat-form-field appearance="outline">
-                <mat-label>Entity Name</mat-label>
-                <input matInput [(ngModel)]="newEntity" placeholder="Enter entity name">
-              </mat-form-field>
-              <button mat-raised-button color="primary" (click)="addEntity()" [disabled]="!newEntity">
-                <mat-icon>add</mat-icon>
-                Add Entity
-              </button>
+            <div class="add-form entity-form">
+              <div class="form-row">
+                <mat-form-field appearance="outline">
+                  <mat-label>Entity Name</mat-label>
+                  <input matInput [(ngModel)]="newEntity.name" placeholder="Enter entity name" required>
+                </mat-form-field>
+                
+                <mat-form-field appearance="outline">
+                  <mat-label>Country</mat-label>
+                  <input matInput [(ngModel)]="newEntity.country" placeholder="Enter country">
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline">
+                  <mat-label>City</mat-label>
+                  <input matInput [(ngModel)]="newEntity.city" placeholder="Enter city">
+                </mat-form-field>
+                
+                <mat-form-field appearance="outline">
+                  <mat-label>Address</mat-label>
+                  <input matInput [(ngModel)]="newEntity.address" placeholder="Enter address">
+                </mat-form-field>
+              </div>
+
+              <div class="form-row toggle-row">
+                <mat-slide-toggle [(ngModel)]="newEntity.isActive" color="primary">
+                  <span class="toggle-label">Active</span>
+                </mat-slide-toggle>
+                
+                <button mat-raised-button color="primary" (click)="addEntity()" [disabled]="!newEntity.name">
+                  <mat-icon>add</mat-icon>
+                  Add Entity
+                </button>
+              </div>
             </div>
 
             <div *ngIf="!entities.length" class="empty-state">
@@ -39,17 +65,50 @@
                   <td mat-cell *matCellDef="let item">{{ item.name }}</td>
                 </ng-container>
 
-                <ng-container matColumnDef="actions">
-                  <th mat-header-cell *matHeaderCellDef>Actions</th>
+                <ng-container matColumnDef="country">
+                  <th mat-header-cell *matHeaderCellDef>Country</th>
+                  <td mat-cell *matCellDef="let item">{{ item.country || '-' }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="city">
+                  <th mat-header-cell *matHeaderCellDef>City</th>
+                  <td mat-cell *matCellDef="let item">{{ item.city || '-' }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="address">
+                  <th mat-header-cell *matHeaderCellDef>Address</th>
+                  <td mat-cell *matCellDef="let item">{{ item.address || '-' }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="status">
+                  <th mat-header-cell *matHeaderCellDef>Status</th>
                   <td mat-cell *matCellDef="let item">
-                    <button mat-icon-button color="warn" (click)="deleteEntity(item)" matTooltip="Delete">
-                      <mat-icon>delete</mat-icon>
-                    </button>
+                    <mat-slide-toggle 
+                      [checked]="item.isActive" 
+                      (change)="toggleEntityStatus(item, $event)"
+                      color="primary"
+                      [matTooltip]="item.isActive ? 'Click to deactivate' : 'Click to activate'">
+                      <span class="toggle-label-small">{{ item.isActive ? 'Active' : 'Inactive' }}</span>
+                    </mat-slide-toggle>
                   </td>
                 </ng-container>
 
-                <tr mat-header-row *matHeaderRowDef="['name', 'actions']"></tr>
-                <tr mat-row *matRowDef="let row; columns: ['name', 'actions']"></tr>
+                <ng-container matColumnDef="actions">
+                  <th mat-header-cell *matHeaderCellDef>Actions</th>
+                  <td mat-cell *matCellDef="let item">
+                    <div class="action-buttons">
+                      <button mat-icon-button color="primary" (click)="editEntity(item)" matTooltip="Edit">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      <button mat-icon-button color="warn" (click)="deleteEntity(item)" matTooltip="Delete">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="['name', 'country', 'city', 'address', 'status', 'actions']"></tr>
+                <tr mat-row *matRowDef="let row; columns: ['name', 'country', 'city', 'address', 'status', 'actions']"></tr>
               </table>
             </div>
           </div>
@@ -88,9 +147,14 @@
                 <ng-container matColumnDef="actions">
                   <th mat-header-cell *matHeaderCellDef>Actions</th>
                   <td mat-cell *matCellDef="let item">
-                    <button mat-icon-button color="warn" (click)="deleteDepartment(item)" matTooltip="Delete">
-                      <mat-icon>delete</mat-icon>
-                    </button>
+                    <div class="action-buttons">
+                      <button mat-icon-button color="primary" (click)="editDepartment(item)" matTooltip="Edit">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      <button mat-icon-button color="warn" (click)="deleteDepartment(item)" matTooltip="Delete">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </div>
                   </td>
                 </ng-container>
 
@@ -134,9 +198,14 @@
                 <ng-container matColumnDef="actions">
                   <th mat-header-cell *matHeaderCellDef>Actions</th>
                   <td mat-cell *matCellDef="let item">
-                    <button mat-icon-button color="warn" (click)="deleteLaw(item)" matTooltip="Delete">
-                      <mat-icon>delete</mat-icon>
-                    </button>
+                    <div class="action-buttons">
+                      <button mat-icon-button color="primary" (click)="editLaw(item)" matTooltip="Edit">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      <button mat-icon-button color="warn" (click)="deleteLaw(item)" matTooltip="Delete">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </div>
                   </td>
                 </ng-container>
 

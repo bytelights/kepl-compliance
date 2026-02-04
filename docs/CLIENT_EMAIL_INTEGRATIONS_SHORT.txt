@@ -1,0 +1,48 @@
+Subject: SharePoint Configuration Details Needed for Compliance System
+
+Hi Team,
+
+To complete the SharePoint integration for your Compliance Management System, we need a few configuration details from your Microsoft 365/SharePoint environment.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 REQUIRED INFORMATION:
+
+  • Tenant ID
+  • Site ID
+  • Drive ID
+  • Base Folder Name
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔍 HOW TO GET SHAREPOINT DETAILS:
+
+1. Tenant ID:
+   Azure Portal → Azure Active Directory → Properties → Copy "Tenant ID"
+   https://portal.azure.com
+
+2. Site ID & Drive ID:
+   Use Microsoft Graph Explorer (no installation needed):
+   https://developer.microsoft.com/en-us/graph/graph-explorer
+   
+   Query for Site ID:
+   GET https://graph.microsoft.com/v1.0/sites/YOUR-DOMAIN.sharepoint.com:/sites/YOUR-SITE-NAME
+   
+   Query for Drive ID (use Site ID from above):
+   GET https://graph.microsoft.com/v1.0/sites/{SITE_ID}/drives
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📤 PLEASE REPLY WITH:
+
+Tenant ID: _________________________
+Site ID: _________________________
+Drive ID: _________________________
+Folder Name: Compliance-Documents
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Need detailed step-by-step instructions? See attached guide or let me know if you'd like to schedule a quick call to walk through this together.
+
+Thanks!
+[Your Name]

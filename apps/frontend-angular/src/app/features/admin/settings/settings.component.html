@@ -171,6 +171,106 @@
             </div>
           </div>
         </mat-tab>
+
+        <!-- System Health Tab -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-icon">health_and_safety</mat-icon>
+            System Health
+          </ng-template>
+          <div class="tab-content">
+            <div class="config-section">
+              <div class="health-header">
+                <div>
+                  <h3>System Health Monitor</h3>
+                  <p class="config-description">Real-time system diagnostics and performance metrics</p>
+                </div>
+                <button mat-raised-button (click)="refreshSystemHealth()" [disabled]="healthLoading">
+                  <mat-icon>refresh</mat-icon>
+                  Refresh
+                </button>
+              </div>
+
+              <div *ngIf="healthLoading" class="health-loading">
+                <mat-spinner diameter="50"></mat-spinner>
+                <p>Loading system health data...</p>
+              </div>
+
+              <div *ngIf="!healthLoading && systemHealth" class="health-grid">
+                <!-- Database Health -->
+                <mat-card class="health-card">
+                  <div class="health-card-header">
+                    <mat-icon [class.health-ok]="systemHealth.database.status === 'OK'" 
+                              [class.health-error]="systemHealth.database.status !== 'OK'">
+                      storage
+                    </mat-icon>
+                    <h4>Database</h4>
+                  </div>
+                  <div class="health-status" [class.status-ok]="systemHealth.database.status === 'OK'"
+                       [class.status-error]="systemHealth.database.status !== 'OK'">
+                    {{ systemHealth.database.status }}
+                  </div>
+                  <p class="health-message">{{ systemHealth.database.message }}</p>
+                  <div class="health-metrics">
+                    <div class="metric">
+                      <span class="metric-label">Response Time</span>
+                      <span class="metric-value">{{ systemHealth.database.responseTime }}ms</span>
+                    </div>
+                  </div>
+                </mat-card>
+
+                <!-- SharePoint Integration -->
+                <mat-card class="health-card">
+                  <div class="health-card-header">
+                    <mat-icon [class.health-ok]="systemHealth.sharepoint.status === 'OK'" 
+                              [class.health-error]="systemHealth.sharepoint.status !== 'OK'">
+                      folder
+                    </mat-icon>
+                    <h4>SharePoint</h4>
+                  </div>
+                  <div class="health-status" [class.status-ok]="systemHealth.sharepoint.status === 'OK'"
+                       [class.status-error]="systemHealth.sharepoint.status !== 'OK'">
+                    {{ systemHealth.sharepoint.status }}
+                  </div>
+                  <p class="health-message">{{ systemHealth.sharepoint.message }}</p>
+                  <div class="health-metrics" *ngIf="systemHealth.sharepoint.configured">
+                    <div class="metric">
+                      <span class="metric-label">Configured</span>
+                      <span class="metric-value">
+                        <mat-icon class="metric-icon">check_circle</mat-icon>
+                      </span>
+                    </div>
+                  </div>
+                </mat-card>
+
+                <!-- Teams Integration -->
+                <mat-card class="health-card">
+                  <div class="health-card-header">
+                    <mat-icon [class.health-ok]="systemHealth.teams.status === 'OK'" 
+                              [class.health-error]="systemHealth.teams.status !== 'OK'">
+                      group
+                    </mat-icon>
+                    <h4>Microsoft Teams</h4>
+                  </div>
+                  <div class="health-status" [class.status-ok]="systemHealth.teams.status === 'OK'"
+                       [class.status-error]="systemHealth.teams.status !== 'OK'">
+                    {{ systemHealth.teams.status }}
+                  </div>
+                  <p class="health-message">{{ systemHealth.teams.message }}</p>
+                  <div class="health-metrics" *ngIf="systemHealth.teams.configured">
+                    <div class="metric">
+                      <span class="metric-label">Configured</span>
+                      <span class="metric-value">
+                        <mat-icon class="metric-icon">check_circle</mat-icon>
+                      </span>
+                    </div>
+                  </div>
+                </mat-card>
+
+              </div>
+            </div>
+          </div>
+        </mat-tab>
       </mat-tab-group>
     </mat-card>
   </div>

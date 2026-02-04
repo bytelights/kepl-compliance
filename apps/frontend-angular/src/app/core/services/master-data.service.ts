@@ -17,11 +17,11 @@ export class MasterDataService {
     return this.http.get<ApiResponse<Entity[]>>(`${this.apiUrl}/entities`);
   }
 
-  createEntity(data: { name: string }): Observable<ApiResponse<Entity>> {
+  createEntity(data: { name: string; country?: string; city?: string; address?: string; isActive?: boolean }): Observable<ApiResponse<Entity>> {
     return this.http.post<ApiResponse<Entity>>(`${this.apiUrl}/entities`, data);
   }
 
-  updateEntity(id: string, data: { name: string }): Observable<ApiResponse<Entity>> {
+  updateEntity(id: string, data: { name?: string; country?: string; city?: string; address?: string; isActive?: boolean }): Observable<ApiResponse<Entity>> {
     return this.http.patch<ApiResponse<Entity>>(`${this.apiUrl}/entities/${id}`, data);
   }
 

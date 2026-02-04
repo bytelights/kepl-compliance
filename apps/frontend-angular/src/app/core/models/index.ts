@@ -13,6 +13,10 @@ export interface User {
 export interface Entity {
   id: string;
   name: string;
+  country?: string;
+  city?: string;
+  address?: string;
+  isActive: boolean;
 }
 
 export interface Department {
@@ -41,6 +45,16 @@ export interface ComplianceMaster {
 }
 
 // Task
+export interface TaskExecution {
+  id: string;
+  taskId: string;
+  userId: string;
+  action: string;
+  comment?: string;
+  remarks?: string;
+  executedAt: string;
+}
+
 export interface ComplianceTask {
   id: string;
   complianceId: string;
@@ -50,6 +64,7 @@ export interface ComplianceTask {
   dueDate?: string;
   completedAt?: string;
   skippedAt?: string;
+  skipRemarks?: string;
   lawId: string;
   departmentId: string;
   entityId: string;
@@ -65,6 +80,7 @@ export interface ComplianceTask {
   owner?: User;
   reviewer?: User;
   evidenceFiles?: EvidenceFile[];
+  taskExecutions?: TaskExecution[];
 }
 
 // Evidence
@@ -137,15 +153,34 @@ export interface AdminDashboard {
   totalTasks: number;
   pendingTasks: number;
   completedTasks: number;
+  skippedTasks: number;
   overdueTasks: number;
   totalUsers: number;
   recentImports: CsvImportJob[];
   departmentStats: DepartmentStat[];
   ownerStats: OwnerStat[];
-  systemHealth: {
-    dbConnected: boolean;
-    sharePointConnected: boolean;
-    teamsConnected: boolean;
+  trendData: {
+    labels: string[];
+    created: number[];
+    completed: number[];
+  };
+}
+
+export interface SystemHealth {
+  database: {
+    status: string;
+    message: string;
+    responseTime: number;
+  };
+  sharepoint: {
+    status: string;
+    message: string;
+    configured: boolean;
+  };
+  teams: {
+    status: string;
+    message: string;
+    configured: boolean;
   };
 }
 
@@ -164,6 +199,7 @@ export interface DepartmentStat {
   totalTasks: number;
   pendingCount: number;
   completedCount: number;
+  skippedCount: number;
   overdueCount: number;
 }
 
@@ -174,6 +210,7 @@ export interface OwnerStat {
   totalTasks: number;
   pendingCount: number;
   completedCount: number;
+  skippedCount: number;
   overdueCount: number;
 }
 

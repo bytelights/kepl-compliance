@@ -74,6 +74,19 @@
           <label>Description</label>
           <p>{{ task.description }}</p>
         </div>
+
+        <div *ngIf="getExecutionRemarks()" class="skip-remarks-block" 
+             [class.completed-remarks]="task.status === 'COMPLETED'">
+          <label>
+            <mat-icon>{{ getExecutionIcon() }}</mat-icon>
+            {{ getExecutionLabel() }}
+          </label>
+          <p class="skip-remarks-text">{{ getExecutionRemarks() }}</p>
+          <div class="skip-meta" *ngIf="getLatestExecution()">
+            <mat-icon>schedule</mat-icon>
+            <span>{{ getLatestExecution()?.action === 'SKIP' ? 'Skipped' : 'Completed' }} on {{ getLatestExecution()?.executedAt | date: 'MMM d, y, h:mm a' }}</span>
+          </div>
+        </div>
       </div>
 
       <!-- Task Actions for Pending Tasks -->

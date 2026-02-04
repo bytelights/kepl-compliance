@@ -15,6 +15,71 @@
       </div>
     </div>
 
+    <!-- Date Filter Section -->
+    <mat-card class="filter-card">
+      <mat-card-content>
+        <form [formGroup]="dateFilterForm" class="date-filter-form">
+          <div class="filter-row">
+            <mat-form-field appearance="outline" class="filter-type-field">
+              <mat-label>Time Period</mat-label>
+              <mat-select formControlName="filterType" (selectionChange)="onFilterTypeChange()">
+                <mat-option value="all">All Time</mat-option>
+                <mat-option value="last30days">Last 30 Days</mat-option>
+                <mat-option value="dateRange">Custom Date Range</mat-option>
+                <mat-option value="financialYear">Financial Year</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <!-- Date Range Fields -->
+            <ng-container *ngIf="dateFilterForm.get('filterType')?.value === 'dateRange'">
+              <mat-form-field appearance="outline">
+                <mat-label>Start Date</mat-label>
+                <input matInput [matDatepicker]="startPicker" formControlName="startDate">
+                <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+                <mat-datepicker #startPicker></mat-datepicker>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>End Date</mat-label>
+                <input matInput [matDatepicker]="endPicker" formControlName="endDate">
+                <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+                <mat-datepicker #endPicker></mat-datepicker>
+              </mat-form-field>
+            </ng-container>
+
+            <!-- Financial Year Field -->
+            <mat-form-field 
+              appearance="outline" 
+              *ngIf="dateFilterForm.get('filterType')?.value === 'financialYear'"
+              class="fy-field">
+              <mat-label>Select Financial Year</mat-label>
+              <mat-select formControlName="financialYear">
+                <mat-option *ngFor="let fy of financialYearOptions" [value]="fy.value">
+                  {{ fy.label }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <!-- Filter Actions -->
+            <div class="filter-actions">
+              <button 
+                mat-raised-button 
+                color="primary" 
+                (click)="applyDateFilter()"
+                [disabled]="dateFilterForm.get('filterType')?.value === 'dateRange' && (!dateFilterForm.get('startDate')?.value || !dateFilterForm.get('endDate')?.value)">
+                <mat-icon>filter_list</mat-icon>
+                Apply Filter
+              </button>
+              <button mat-button (click)="resetDateFilter()">
+                <mat-icon>clear</mat-icon>
+                Reset
+              </button>
+            </div>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
     <!-- Task Owner Dashboard -->
     <div *ngIf="isTaskOwner()" class="dashboard-content">
       <!-- Stats Cards -->
@@ -199,6 +264,20 @@
           <mat-card-content>
             <div class="stat-content">
               <div class="stat-info">
+                <div class="stat-label">Skipped</div>
+                <div class="stat-value">{{ adminData.skippedTasks }}</div>
+              </div>
+              <div class="stat-icon skipped">
+                <mat-icon>block</mat-icon>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="stat-card">
+          <mat-card-content>
+            <div class="stat-content">
+              <div class="stat-info">
                 <div class="stat-label">Overdue</div>
                 <div class="stat-value">{{ adminData.overdueTasks }}</div>
               </div>
@@ -264,56 +343,17 @@
             </mat-card-content>
           </mat-card>
 
-          <mat-card class="content-card health-status-card">
+          <mat-card class="content-card chart-card">
             <mat-card-header>
-              <mat-card-title>System Health</mat-card-title>
+              <mat-card-title>Task Completion Trends</mat-card-title>
             </mat-card-header>
             <mat-card-content>
-              <div class="health-grid">
-                <!-- Database Status -->
-                <div class="health-service" [class.connected]="adminData.systemHealth.dbConnected">
-                  <div class="service-icon-wrapper">
-                    <mat-icon class="service-icon">storage</mat-icon>
-                  </div>
-                  <div class="service-details">
-                    <div class="service-name">Database</div>
-                    <div class="service-status">
-                      <span class="status-dot"></span>
-                      <span class="status-text">{{ adminData.systemHealth.dbConnected ? 'Connected' : 'Disconnected' }}</span>
-                    </div>
-                  </div>
-                  <mat-icon class="status-indicator">{{ adminData.systemHealth.dbConnected ? 'check_circle' : 'error' }}</mat-icon>
-                </div>
-
-                <!-- SharePoint Status -->
-                <div class="health-service" [class.connected]="adminData.systemHealth.sharePointConnected">
-                  <div class="service-icon-wrapper">
-                    <mat-icon class="service-icon">folder</mat-icon>
-                  </div>
-                  <div class="service-details">
-                    <div class="service-name">SharePoint</div>
-                    <div class="service-status">
-                      <span class="status-dot"></span>
-                      <span class="status-text">{{ adminData.systemHealth.sharePointConnected ? 'Connected' : 'Disconnected' }}</span>
-                    </div>
-                  </div>
-                  <mat-icon class="status-indicator">{{ adminData.systemHealth.sharePointConnected ? 'check_circle' : 'error' }}</mat-icon>
-                </div>
-
-                <!-- Teams Status -->
-                <div class="health-service" [class.connected]="adminData.systemHealth.teamsConnected">
-                  <div class="service-icon-wrapper">
-                    <mat-icon class="service-icon">group</mat-icon>
-                  </div>
-                  <div class="service-details">
-                    <div class="service-name">Teams</div>
-                    <div class="service-status">
-                      <span class="status-dot"></span>
-                      <span class="status-text">{{ adminData.systemHealth.teamsConnected ? 'Connected' : 'Disconnected' }}</span>
-                    </div>
-                  </div>
-                  <mat-icon class="status-indicator">{{ adminData.systemHealth.teamsConnected ? 'check_circle' : 'error' }}</mat-icon>
-                </div>
+              <div class="chart-container">
+                <canvas baseChart
+                  [type]="lineChartType"
+                  [data]="adminTrendsChartData"
+                  [options]="lineChartOptions">
+                </canvas>
               </div>
             </mat-card-content>
           </mat-card>

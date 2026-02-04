@@ -260,6 +260,148 @@
   background-color: #1976D2 !important;
 }
 
+/* System Health */
+.health-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.health-header button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.health-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 16px;
+}
+
+.health-loading p {
+  font-size: 14px;
+  color: #7f8c8d;
+  margin: 0;
+}
+
+.health-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  width: 100%;
+}
+
+.health-card {
+  padding: 24px;
+  background-color: #ffffff;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.health-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+.health-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.health-card-header mat-icon {
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
+  transition: color 0.3s;
+}
+
+.health-card-header mat-icon.health-ok {
+  color: #4CAF50;
+}
+
+.health-card-header mat-icon.health-error {
+  color: #f44336;
+}
+
+.health-card-header h4 {
+  font-size: 16px;
+  font-weight: 500;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.health-status {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.health-status.status-ok {
+  background-color: #E8F5E9;
+  color: #2E7D32;
+}
+
+.health-status.status-error {
+  background-color: #FFEBEE;
+  color: #C62828;
+}
+
+.health-message {
+  font-size: 14px;
+  color: #7f8c8d;
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+}
+
+.health-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #e8e8e8;
+}
+
+.metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.metric-label {
+  font-size: 13px;
+  color: #7f8c8d;
+}
+
+.metric-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.metric-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: #4CAF50;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .page-container {
@@ -287,5 +429,19 @@
   
   .config-item mat-icon {
     margin-top: 0;
+  }
+
+  .health-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .health-header button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .health-grid {
+    grid-template-columns: 1fr;
   }
 }

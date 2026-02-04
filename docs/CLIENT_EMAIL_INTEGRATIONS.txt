@@ -1,0 +1,77 @@
+Subject: SharePoint Configuration Details Required for Compliance Management System
+
+Hi Team,
+
+To complete the SharePoint integration setup for the Compliance Management System, we need configuration details from your Microsoft 365/SharePoint environment.
+
+═══════════════════════════════════════════════════════════════════════════════
+SHAREPOINT CONFIGURATION
+═══════════════════════════════════════════════════════════════════════════════
+
+We need the following details:
+• Tenant ID
+• Site ID  
+• Drive ID
+• Base Folder Name (default: "Compliance-Documents")
+
+HOW TO GET THESE DETAILS:
+
+Step 1: Get Tenant ID
+1. Go to https://portal.azure.com
+2. Navigate to: Azure Active Directory → Properties
+3. Copy the "Tenant ID" (also called Directory ID)
+
+Step 2: Get Site ID
+1. Open Microsoft Graph Explorer: https://developer.microsoft.com/en-us/graph/graph-explorer
+2. Sign in with your Microsoft 365 admin account
+3. Grant permissions when prompted (Sites.Read.All)
+4. Run this query (replace with your values):
+
+   GET https://graph.microsoft.com/v1.0/sites/YOUR-DOMAIN.sharepoint.com:/sites/YOUR-SITE-NAME
+
+   Example: 
+   GET https://graph.microsoft.com/v1.0/sites/contoso.sharepoint.com:/sites/ComplianceHub
+
+5. Copy the entire "id" value from the response
+   (It looks like: contoso.sharepoint.com,abc123...,def456...)
+
+Step 3: Get Drive ID
+1. In Graph Explorer, run this query using the Site ID from Step 2:
+
+   GET https://graph.microsoft.com/v1.0/sites/YOUR_SITE_ID_HERE/drives
+
+2. Find your document library (usually named "Documents")
+3. Copy the "id" value of that drive
+
+═══════════════════════════════════════════════════════════════════════════════
+WHAT TO SEND BACK
+═══════════════════════════════════════════════════════════════════════════════
+
+Please reply with:
+
+Tenant ID: [paste here]
+Site ID: [paste here]
+Drive ID: [paste here]
+Base Folder Name: Compliance-Documents (or your preferred folder name)
+
+═══════════════════════════════════════════════════════════════════════════════
+SECURITY & SUPPORT
+═══════════════════════════════════════════════════════════════════════════════
+
+Security Notes:
+• All credentials will be encrypted in our system
+• SharePoint permissions should follow your organization's data governance policies
+
+Need Help?
+If you encounter any issues or have questions, please let us know. We can schedule a quick call to assist you with the setup.
+
+Best regards,
+[Your Name]
+[Your Title]
+Compliance Management System Team
+
+---
+This setup is required to enable:
+✓ Automatic document storage in SharePoint
+✓ Secure evidence file management
+✓ Compliance tracking and reporting

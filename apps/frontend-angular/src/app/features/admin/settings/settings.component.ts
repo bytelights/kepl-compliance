@@ -13,6 +13,8 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { environment } from '../../../../environments/environment';
+import { DashboardService } from '../../../core/services/dashboard.service';
+import { SystemHealth } from '../../../core/models';
 
 @Component({
   selector: 'app-settings',
@@ -59,13 +61,19 @@ export class SettingsComponent implements OnInit {
   teamsTesting = false;
   teamsSaving = false;
 
+  // System Health
+  systemHealth: SystemHealth | null = null;
+  healthLoading = false;
+
   constructor(
     private http: HttpClient,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private dashboardService: DashboardService
   ) {}
 
   ngOnInit(): void {
     this.loadConfigurations();
+    this.loadSystemHealth();
   }
 
   loadConfigurations(): void {
@@ -166,5 +174,26 @@ export class SettingsComponent implements OnInit {
         this.snackBar.open('Failed to send test message: ' + (err.error?.message || 'Unknown error'), 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
       },
     });
+  }
+
+  // System Health methods
+  loadSystemHealth(): void {
+    this.healthLoading = true;
+    this.dashboardService.getSystemHealth().subscribe({
+      next: (response) => {
+        this.healthLoading = false;
+        if (response.success && response.data) {
+          this.systemHealth = response.data;
+        }
+      },
+      error: (err) => {
+        this.healthLoading = false;
+        console.error('Failed to load system health:', err);
+      },
+    });
+  }
+
+  refreshSystemHealth(): void {
+    this.loadSystemHealth();
   }
 }

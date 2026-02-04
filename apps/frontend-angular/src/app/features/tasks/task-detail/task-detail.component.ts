@@ -9,13 +9,14 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatDialogModule } from '@angular/material/dialog';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { TaskService } from '../../../core/services/task.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { DialogService } from '../../../shared/services/dialog.service';
 import { ComplianceTask } from '../../../core/models';
+import { SkipTaskDialogComponent } from '../../../shared/components/skip-task-dialog/skip-task-dialog.component';
 
 @Component({
   selector: 'app-task-detail',
@@ -53,13 +54,55 @@ export class TaskDetailComponent implements OnInit {
     return this.task?.status === 'PENDING';
   }
 
+  getLatestExecution() {
+    if (!this.task || !this.task.taskExecutions || this.task.taskExecutions.length === 0) {
+      return null;
+    }
+    // Return the most recent execution (already sorted by executedAt desc)
+    return this.task.taskExecutions[0];
+  }
+
+  getExecutionRemarks(): string | undefined {
+    const execution = this.getLatestExecution();
+    return execution?.remarks || execution?.comment;
+  }
+
+  getExecutionLabel(): string {
+    const execution = this.getLatestExecution();
+    if (!execution) return 'Remarks';
+    
+    switch (execution.action) {
+      case 'SKIP':
+        return 'Reason for Skipping';
+      case 'COMPLETE':
+        return 'Completion Comments';
+      default:
+        return 'Remarks';
+    }
+  }
+
+  getExecutionIcon(): string {
+    const execution = this.getLatestExecution();
+    if (!execution) return 'comment';
+    
+    switch (execution.action) {
+      case 'SKIP':
+        return 'block';
+      case 'COMPLETE':
+        return 'check_circle';
+      default:
+        return 'comment';
+    }
+  }
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private taskService: TaskService,
     private authService: AuthService,
     private snackBar: MatSnackBar,
-    private dialogService: DialogService
+    private dialogService: DialogService,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit() {
@@ -228,36 +271,14 @@ export class TaskDetailComponent implements OnInit {
   }
 
   openSkipDialog() {
-    // For now, show simple input (TODO: Create proper skip dialog component)
-    this.dialogService.confirm({
-      title: 'Skip Task',
-      message: 'Skipping this task will mark it as not applicable. Are you sure you want to skip?',
-      confirmText: 'Continue',
-      cancelText: 'Cancel',
-      isDanger: true
-    }).subscribe(confirmed => {
-      if (confirmed) {
-        const remarks = prompt('Enter reason for skipping this task (required):');
-        if (remarks && remarks.trim()) {
-          this.skipRemarks = remarks;
-          this.skipTask();
-        }
-      }
+    const dialogRef = this.dialog.open(SkipTaskDialogComponent, {
+      width: '500px',
+      disableClose: true,
     });
-  }
 
-  skipTask() {
-    if (!this.task || !this.skipRemarks) return;
-
-    this.dialogService.confirm({
-      title: 'Skip Task',
-      message: `Are you sure you want to skip this task?`,
-      confirmText: 'Skip',
-      cancelText: 'Cancel',
-      isDanger: true
-    }).subscribe(confirmed => {
-      if (confirmed && this.task) {
-        this.taskService.skipTask(this.task.id, { remarks: this.skipRemarks }).subscribe({
+    dialogRef.afterClosed().subscribe((skipRemarks: string) => {
+      if (skipRemarks && this.task) {
+        this.taskService.skipTask(this.task.id, { remarks: skipRemarks }).subscribe({
           next: (response) => {
             if (response.success) {
               this.snackBar.open('Task skipped successfully!', 'Close', {

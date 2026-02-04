@@ -49,6 +49,10 @@ model User {
 model Entity {
   id          String   @id @default(uuid())
   name        String   @unique
+  country     String?
+  city        String?
+  address     String?
+  isActive    Boolean  @default(true) @map("is_active")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -153,6 +157,10 @@ model ComplianceTask {
   frequency            TaskFrequency?
   impact               TaskImpact?
   dueDate              DateTime?      @map("due_date")
+  
+  completedAt          DateTime?      @map("completed_at")
+  skippedAt            DateTime?      @map("skipped_at")
+  skipRemarks          String?        @map("skip_remarks")
   
   createdAt            DateTime       @default(now()) @map("created_at")
   updatedAt            DateTime       @updatedAt @map("updated_at")

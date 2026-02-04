@@ -1,6 +1,6 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -91,7 +91,8 @@ export class TaskListComponent implements OnInit {
     private authService: AuthService,
     private fb: FormBuilder,
     private snackBar: MatSnackBar,
-    private dialogService: DialogService
+    private dialogService: DialogService,
+    private router: Router
   ) {
     this.filterForm = this.fb.group({
       search: [''],
@@ -205,6 +206,15 @@ export class TaskListComponent implements OnInit {
   isOverdue(task: ComplianceTask): boolean {
     if (!task.dueDate || task.status !== 'PENDING') return false;
     return new Date(task.dueDate) < new Date();
+  }
+
+  onRowClick(task: ComplianceTask, event: MouseEvent) {
+    // Don't navigate if clicking on actions menu
+    const target = event.target as HTMLElement;
+    if (target.closest('button') || target.closest('.mat-mdc-menu-trigger')) {
+      return;
+    }
+    this.router.navigate(['/tasks', task.id]);
   }
 
   openEvidenceModal(task: ComplianceTask): void {
