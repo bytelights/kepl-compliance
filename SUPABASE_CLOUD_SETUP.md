@@ -2,6 +2,24 @@
 
 This guide will help you migrate from local Supabase to Supabase Cloud for the Compliance Management System.
 
+## Quick Reference - Get PostgreSQL URI
+
+**Fast track to get your connection string:**
+
+1. Go to [https://supabase.com/dashboard](https://supabase.com/dashboard)
+2. Click your project
+3. Click **Settings** (gear icon) → **Database**
+4. Scroll to **"Connection string"** section
+5. Click **"URI"** tab
+6. Copy the string and replace `[YOUR-PASSWORD]` with your database password
+
+**Result format:**
+```
+postgresql://postgres:YourPassword@db.xxxxxxxxxxxxx.supabase.co:5432/postgres
+```
+
+---
+
 ## Step 1: Create Supabase Cloud Account
 
 1. Go to [https://supabase.com](https://supabase.com)
@@ -24,16 +42,51 @@ This guide will help you migrate from local Supabase to Supabase Cloud for the C
 
 ## Step 3: Get Connection Details
 
-### 3.1 Get Database URL
+### 3.1 Get Database URL (PostgreSQL URI)
 
-1. In your Supabase project dashboard, go to **Settings** (gear icon in sidebar)
-2. Click **"Database"** in the left menu
-3. Scroll down to **"Connection string"** section
-4. Copy the **"URI"** connection string (it looks like this):
-   ```
-   postgresql://postgres:[YOUR-PASSWORD]@db.xxxxxxxxxxxxx.supabase.co:5432/postgres
-   ```
-5. Replace `[YOUR-PASSWORD]` with the database password you created in Step 2
+**Follow these exact steps:**
+
+1. **Go to your Supabase project dashboard** at [https://supabase.com/dashboard](https://supabase.com/dashboard)
+
+2. **Select your project** from the list (click on the project you just created)
+
+3. **Open Settings:**
+   - Look for the **gear icon (⚙️)** in the left sidebar at the bottom
+   - Click on **"Settings"**
+
+4. **Navigate to Database settings:**
+   - In the Settings menu, click **"Database"** from the left submenu
+   
+5. **Find Connection String section:**
+   - Scroll down until you see **"Connection string"** section
+   - You'll see multiple tabs: **Prisma**, **URI**, **JDBC**, **Session pooler**
+
+6. **Copy the URI format:**
+   - Click on the **"URI"** tab
+   - You'll see a connection string like:
+     ```
+     postgresql://postgres:[YOUR-PASSWORD]@db.xxxxxxxxxxxxx.supabase.co:5432/postgres
+     ```
+   - Click the **copy icon** button next to it
+
+7. **Replace the password placeholder:**
+   - The copied string has `[YOUR-PASSWORD]` in it
+   - Replace `[YOUR-PASSWORD]` with the **database password you created in Step 2**
+   - Final format should look like:
+     ```
+     postgresql://postgres:YourActualPassword123@db.abcdefghijklmno.supabase.co:5432/postgres
+     ```
+
+**Example:**
+```
+Before: postgresql://postgres:[YOUR-PASSWORD]@db.abcdefghijklmno.supabase.co:5432/postgres
+After:  postgresql://postgres:MySecret123!@db.abcdefghijklmno.supabase.co:5432/postgres
+```
+
+**Important Notes:**
+- The project reference ID (the `xxxxxxxxxxxxx` part) is unique to your project
+- Keep your password secure - don't share it or commit it to Git
+- If you forgot your password, you can reset it in Settings → Database → "Reset Database Password"
 
 ### 3.2 Get API Keys (Optional - Skip if only using database)
 
@@ -179,6 +232,20 @@ When deploying to production:
 - Check if your IP is whitelisted (Supabase allows all IPs by default)
 - Verify DATABASE_URL is correct
 - Check if you're using the correct password
+
+### Forgot Database Password
+1. Go to Supabase Dashboard → Settings → Database
+2. Scroll to **"Database password"** section
+3. Click **"Reset Database Password"**
+4. Enter a new password and save
+5. Update your `DATABASE_URL` in `.env` with the new password
+6. Restart your backend server
+
+### Can't Find Connection String
+- Make sure you're in the correct project
+- Look for **Settings** (gear icon) at the bottom of the left sidebar
+- Go to **Database** from the Settings submenu
+- Scroll down - the Connection string section is below the Database settings
 
 ### Migration Errors
 ```bash
