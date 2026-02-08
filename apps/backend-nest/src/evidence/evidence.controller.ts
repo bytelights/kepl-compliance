@@ -6,8 +6,11 @@ import {
   Param,
   Body,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { EvidenceService } from './evidence.service';
 import { CreateUploadSessionDto } from './dto/create-upload-session.dto';
 import { CompleteUploadDto } from './dto/complete-upload.dto';
@@ -31,6 +34,21 @@ export class EvidenceController {
       taskId,
       user.sub,
       createDto,
+    );
+    return { success: true, data };
+  }
+
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadFile(
+    @Param('taskId') taskId: string,
+    @CurrentUser() user: JwtPayload,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    const data = await this.evidenceService.uploadFile(
+      taskId,
+      user.sub,
+      file,
     );
     return { success: true, data };
   }

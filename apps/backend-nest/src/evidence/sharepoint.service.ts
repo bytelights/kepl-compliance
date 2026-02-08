@@ -36,16 +36,21 @@ export class SharePointService {
       clientSecret,
     );
 
-    this.graphClient = Client.initWithMiddleware({
-      authProvider: {
-        getAccessToken: async () => {
-          const token = await credential.getToken(
-            'https://graph.microsoft.com/.default',
-          );
-          return token.token;
+    try {
+      this.graphClient = Client.initWithMiddleware({
+        authProvider: {
+          getAccessToken: async () => {
+            const token = await credential.getToken(
+              'https://graph.microsoft.com/.default',
+            );
+            return token.token;
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      console.error('Error initializing graph client:', error);
+      throw error;
+    }
   }
 
   /**
@@ -67,6 +72,8 @@ export class SharePointService {
       complianceId,
     ];
 
+    console.log('[SharePoint] ensureFolderPath segments:', pathSegments, 'driveId:', this.driveId);
+
     let currentPath = '';
     for (const segment of pathSegments) {
       currentPath = currentPath ? `${currentPath}/${segment}` : segment;
@@ -78,10 +85,9 @@ export class SharePointService {
 
   private async ensureFolderExists(folderPath: string): Promise<void> {
     try {
-      // Check if folder exists
-      await this.graphClient
-        .api(`/drives/${this.driveId}/root:/${folderPath}`)
-        .get();
+      const checkUrl = `/drives/${this.driveId}/root:/${folderPath}`;
+      console.log('[SharePoint] Checking folder:', checkUrl);
+      await this.graphClient.api(checkUrl).get();
     } catch (error: any) {
       if (error.statusCode === 404) {
         // Create folder
@@ -89,16 +95,19 @@ export class SharePointService {
         const folderName = pathParts.pop();
         const parentPath = pathParts.join('/');
 
+        // Path-based addressing requires closing colon before /children
         const parentRef = parentPath
-          ? `/drives/${this.driveId}/root:/${parentPath}`
-          : `/drives/${this.driveId}/root`;
+          ? `/drives/${this.driveId}/root:/${parentPath}:/children`
+          : `/drives/${this.driveId}/root/children`;
 
-        await this.graphClient.api(`${parentRef}/children`).post({
+        console.log('[SharePoint] Creating folder:', folderName, 'at:', parentRef);
+        await this.graphClient.api(parentRef).post({
           name: folderName,
           folder: {},
           '@microsoft.graph.conflictBehavior': 'rename',
         });
       } else {
+        console.error('[SharePoint] ensureFolderExists error:', error.statusCode, error.code, error.message, error.body);
         throw error;
       }
     }
@@ -112,6 +121,7 @@ export class SharePointService {
     fileName: string,
   ): Promise<any> {
     const uploadUrl = `/drives/${this.driveId}/root:/${folderPath}/${fileName}:/createUploadSession`;
+    console.log('[SharePoint] createUploadSession URL:', uploadUrl);
 
     const uploadSession = await this.graphClient.api(uploadUrl).post({
       item: {
@@ -123,6 +133,51 @@ export class SharePointService {
       uploadUrl: uploadSession.uploadUrl,
       expirationDateTime: uploadSession.expirationDateTime,
     };
+  }
+
+  /**
+   * Uploads a file buffer to SharePoint (server-side, avoids CORS).
+   * Uses simple PUT for files <= 4MB, chunked upload session for larger files.
+   */
+  async uploadFileBuffer(
+    folderPath: string,
+    fileName: string,
+    buffer: Buffer,
+    fileSize: number,
+  ): Promise<{ id: string; webUrl: string }> {
+    if (fileSize <= 4 * 1024 * 1024) {
+      // Small file: simple PUT
+      const putUrl = `/drives/${this.driveId}/root:/${folderPath}/${fileName}:/content`;
+      console.log('[SharePoint] Simple PUT upload:', putUrl, `(${fileSize} bytes)`);
+      return await this.graphClient
+        .api(putUrl)
+        .putStream(buffer);
+    }
+
+    // Large file: chunked upload via upload session
+    console.log('[SharePoint] Chunked upload for:', fileName, `(${fileSize} bytes)`);
+    const session = await this.createUploadSession(folderPath, fileName);
+    const chunkSize = 327680 * 10; // 3.2 MB chunks
+    let offset = 0;
+    let result: any;
+
+    while (offset < fileSize) {
+      const end = Math.min(offset + chunkSize, fileSize);
+      const chunk = buffer.subarray(offset, end);
+
+      result = await fetch(session.uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Length': chunk.length.toString(),
+          'Content-Range': `bytes ${offset}-${end - 1}/${fileSize}`,
+        },
+        body: new Uint8Array(chunk),
+      }).then((r) => r.json());
+
+      offset = end;
+    }
+
+    return result;
   }
 
   /**

@@ -259,6 +259,36 @@
           </div>
         </div>
       </div>
+
+      <!-- Evidence Files -->
+      <div class="evidence-section" *ngIf="task.evidenceFiles && task.evidenceFiles.length > 0">
+        <h2 class="section-title">
+          <mat-icon>attach_file</mat-icon>
+          Evidence Files ({{ task.evidenceFiles!.length }})
+        </h2>
+        <div class="evidence-files-list">
+          <a
+            *ngFor="let file of task.evidenceFiles!"
+            [href]="file.webUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="evidence-file-row"
+          >
+            <div class="evidence-file-icon">
+              <mat-icon>{{ getEvidenceFileIcon(file.mimeType) }}</mat-icon>
+            </div>
+            <div class="evidence-file-info">
+              <span class="evidence-file-name">{{ file.name }}</span>
+              <span class="evidence-file-meta">
+                {{ formatFileSize(file.sizeBytes) }}
+                &middot;
+                Uploaded {{ file.uploadedAt | date: 'MMM d, y h:mm a' }}
+              </span>
+            </div>
+            <mat-icon class="evidence-open-icon" matTooltip="Open in SharePoint">open_in_new</mat-icon>
+          </a>
+        </div>
+      </div>
     </div>
   </div>
 </div>

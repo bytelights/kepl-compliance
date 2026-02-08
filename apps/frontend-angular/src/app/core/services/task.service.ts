@@ -70,4 +70,13 @@ export class TaskService {
       data
     );
   }
+
+  uploadEvidence(taskId: string, file: File): Observable<ApiResponse<any>> {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    return this.http.post<any>(
+      `${this.apiUrl}/${taskId}/evidence/upload`,
+      formData
+    );
+  }
 }

@@ -182,6 +182,12 @@ model ComplianceTask {
   @@index([reviewerId])
   @@index([entityId])
   @@index([dueDate])
+  @@index([departmentId])
+  @@index([ownerId, status])
+  @@index([reviewerId, status])
+  @@index([status, dueDate])
+  @@index([createdAt])
+  @@index([completedAt])
   @@map("compliance_tasks")
 }
 

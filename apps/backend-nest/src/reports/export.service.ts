@@ -23,10 +23,18 @@ export class ExportService {
 
     const tasks = await this.prisma.complianceTask.findMany({
       where,
-      include: {
-        entity: true,
-        department: true,
-        law: true,
+      select: {
+        complianceId: true,
+        title: true,
+        description: true,
+        status: true,
+        impact: true,
+        dueDate: true,
+        completedAt: true,
+        createdAt: true,
+        entity: { select: { name: true } },
+        department: { select: { name: true } },
+        law: { select: { name: true } },
         owner: { select: { name: true, email: true } },
         reviewer: { select: { name: true, email: true } },
       },
@@ -101,10 +109,14 @@ export class ExportService {
         status: 'PENDING',
         dueDate: { lt: today },
       },
-      include: {
-        entity: true,
-        department: true,
-        law: true,
+      select: {
+        complianceId: true,
+        title: true,
+        impact: true,
+        dueDate: true,
+        entity: { select: { name: true } },
+        department: { select: { name: true } },
+        law: { select: { name: true } },
         owner: { select: { name: true, email: true } },
       },
       orderBy: { dueDate: 'asc' },

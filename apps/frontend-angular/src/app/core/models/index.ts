@@ -87,14 +87,13 @@ export interface ComplianceTask {
 export interface EvidenceFile {
   id: string;
   taskId: string;
-  fileName: string;
-  fileSize: number;
+  name: string;
+  sizeBytes: number;
   mimeType: string;
-  sharepointFileId: string;
-  sharepointWebUrl: string;
-  uploadedById: string;
+  itemId?: string;
+  webUrl: string;
+  uploadedBy: string;
   uploadedAt: string;
-  uploadedBy?: User;
 }
 
 // CSV Import

@@ -28,7 +28,10 @@ export class MasterDataService {
       case 'compliances_master':
         return this.prisma.complianceMaster.findMany({
           orderBy: { title: 'asc' },
-          include: { law: true, department: true },
+          include: {
+            law: { select: { id: true, name: true } },
+            department: { select: { id: true, name: true } },
+          },
         });
     }
   }

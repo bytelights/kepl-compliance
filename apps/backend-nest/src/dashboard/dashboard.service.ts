@@ -18,7 +18,6 @@ export class DashboardService {
     const next7Days = new Date();
     next7Days.setDate(today.getDate() + 7);
 
-    // Build date filter
     const dateFilter = this.buildDateFilter(startDate, endDate);
 
     const [pendingCount, dueThisWeekCount, overdueCount, recentTasks] =
@@ -52,10 +51,15 @@ export class DashboardService {
             status: 'PENDING',
             ...dateFilter,
           },
-          include: {
-            entity: true,
-            law: true,
-            department: true,
+          select: {
+            id: true,
+            complianceId: true,
+            title: true,
+            status: true,
+            dueDate: true,
+            entity: { select: { id: true, name: true } },
+            law: { select: { id: true, name: true } },
+            department: { select: { id: true, name: true } },
             _count: { select: { evidenceFiles: true } },
           },
           orderBy: { dueDate: 'asc' },
@@ -83,120 +87,92 @@ export class DashboardService {
   ) {
     const today = new Date();
 
-    // Determine filter: admin sees all, reviewer sees only their tasks
     const reviewerFilter = userRole === 'admin' ? {} : { reviewerId: userId };
-    
-    // Build date filter
     const dateFilter = this.buildDateFilter(startDate, endDate);
     const combinedFilter = { ...reviewerFilter, ...dateFilter };
 
-    // Entity-wise stats
-    const entityStats = await this.prisma.complianceTask.groupBy({
-      by: ['entityId'],
-      where: combinedFilter,
-      _count: { _all: true },
-    });
-
-    const entityStatsWithNames = await Promise.all(
-      entityStats.map(async (stat) => {
-        const [entity, pending, completed, overdue] = await Promise.all([
-          this.prisma.entity.findUnique({ where: { id: stat.entityId } }),
-          this.prisma.complianceTask.count({
-            where: { ...combinedFilter, entityId: stat.entityId, status: 'PENDING' },
-          }),
-          this.prisma.complianceTask.count({
-            where: {
-              ...combinedFilter,
-              entityId: stat.entityId,
-              status: 'COMPLETED',
-            },
-          }),
-          this.prisma.complianceTask.count({
-            where: {
-              ...combinedFilter,
-              entityId: stat.entityId,
-              status: 'PENDING',
-              dueDate: { lt: today },
-            },
-          }),
-        ]);
-
-        return {
-          entityId: stat.entityId,
-          entityName: entity?.name || 'Unknown',
-          totalTasks: stat._count._all,
-          pendingCount: pending,
-          completedCount: completed,
-          overdueCount: overdue,
-        };
+    // Single batch: fetch all tasks + lookup tables + overdue list in parallel
+    const [tasks, entities, departments, overdueTasks] = await Promise.all([
+      this.prisma.complianceTask.findMany({
+        where: combinedFilter,
+        select: {
+          entityId: true,
+          departmentId: true,
+          status: true,
+          dueDate: true,
+        },
       }),
-    );
-
-    // Department-wise stats
-    const departmentStats = await this.prisma.complianceTask.groupBy({
-      by: ['departmentId'],
-      where: combinedFilter,
-      _count: { _all: true },
-    });
-
-    const departmentStatsWithNames = await Promise.all(
-      departmentStats.map(async (stat) => {
-        const [department, pending, completed, overdue] = await Promise.all([
-          this.prisma.department.findUnique({
-            where: { id: stat.departmentId },
-          }),
-          this.prisma.complianceTask.count({
-            where: {
-              ...combinedFilter,
-              departmentId: stat.departmentId,
-              status: 'PENDING',
-            },
-          }),
-          this.prisma.complianceTask.count({
-            where: {
-              ...combinedFilter,
-              departmentId: stat.departmentId,
-              status: 'COMPLETED',
-            },
-          }),
-          this.prisma.complianceTask.count({
-            where: {
-              ...combinedFilter,
-              departmentId: stat.departmentId,
-              status: 'PENDING',
-              dueDate: { lt: today },
-            },
-          }),
-        ]);
-
-        return {
-          departmentId: stat.departmentId,
-          departmentName: department?.name || 'Unknown',
-          totalTasks: stat._count._all,
-          pendingCount: pending,
-          completedCount: completed,
-          overdueCount: overdue,
-        };
+      this.prisma.entity.findMany({ select: { id: true, name: true } }),
+      this.prisma.department.findMany({ select: { id: true, name: true } }),
+      this.prisma.complianceTask.findMany({
+        where: {
+          ...combinedFilter,
+          status: 'PENDING',
+          dueDate: { lt: today },
+        },
+        select: {
+          id: true,
+          title: true,
+          dueDate: true,
+          entity: { select: { id: true, name: true } },
+          department: { select: { id: true, name: true } },
+          law: { select: { id: true, name: true } },
+          owner: { select: { name: true, email: true } },
+          reviewer: { select: { name: true, email: true } },
+        },
+        orderBy: { dueDate: 'asc' },
+        take: 20,
       }),
-    );
+    ]);
 
-    // Overdue tasks
-    const overdueTasks = await this.prisma.complianceTask.findMany({
-      where: {
-        ...combinedFilter,
-        status: 'PENDING',
-        dueDate: { lt: today },
-      },
-      include: {
-        entity: true,
-        department: true,
-        law: true,
-        owner: { select: { name: true, email: true } },
-        reviewer: { select: { name: true, email: true } },
-      },
-      orderBy: { dueDate: 'asc' },
-      take: 20,
-    });
+    const entityMap = new Map(entities.map((e) => [e.id, e.name]));
+    const departmentMap = new Map(departments.map((d) => [d.id, d.name]));
+
+    // Aggregate entity stats in memory — replaces N×4 queries with 0 extra queries
+    const entityAgg = new Map<string, { total: number; pending: number; completed: number; overdue: number }>();
+    for (const task of tasks) {
+      let s = entityAgg.get(task.entityId);
+      if (!s) {
+        s = { total: 0, pending: 0, completed: 0, overdue: 0 };
+        entityAgg.set(task.entityId, s);
+      }
+      s.total++;
+      if (task.status === 'PENDING') s.pending++;
+      if (task.status === 'COMPLETED') s.completed++;
+      if (task.status === 'PENDING' && task.dueDate && task.dueDate < today) s.overdue++;
+    }
+
+    const entityStatsWithNames = Array.from(entityAgg.entries()).map(([entityId, s]) => ({
+      entityId,
+      entityName: entityMap.get(entityId) || 'Unknown',
+      totalTasks: s.total,
+      pendingCount: s.pending,
+      completedCount: s.completed,
+      overdueCount: s.overdue,
+    }));
+
+    // Aggregate department stats in memory — replaces M×4 queries with 0 extra queries
+    const deptAgg = new Map<string, { total: number; pending: number; completed: number; overdue: number }>();
+    for (const task of tasks) {
+      let s = deptAgg.get(task.departmentId);
+      if (!s) {
+        s = { total: 0, pending: 0, completed: 0, overdue: 0 };
+        deptAgg.set(task.departmentId, s);
+      }
+      s.total++;
+      if (task.status === 'PENDING') s.pending++;
+      if (task.status === 'COMPLETED') s.completed++;
+      if (task.status === 'PENDING' && task.dueDate && task.dueDate < today) s.overdue++;
+    }
+
+    const departmentStatsWithNames = Array.from(deptAgg.entries()).map(([departmentId, s]) => ({
+      departmentId,
+      departmentName: departmentMap.get(departmentId) || 'Unknown',
+      totalTasks: s.total,
+      pendingCount: s.pending,
+      completedCount: s.completed,
+      overdueCount: s.overdue,
+    }));
 
     return {
       entityStats: entityStatsWithNames,
@@ -207,165 +183,112 @@ export class DashboardService {
 
   async getAdminDashboard(startDate?: string, endDate?: string) {
     const today = new Date();
-    
-    // Build date filter
     const dateFilter = this.buildDateFilter(startDate, endDate);
 
-    const [
-      totalTasks,
-      pendingTasks,
-      completedTasks,
-      skippedTasks,
-      overdueTasksCount,
-      totalUsers,
-      recentImports,
-    ] = await Promise.all([
-      this.prisma.complianceTask.count({ where: dateFilter }),
-      this.prisma.complianceTask.count({
-        where: { status: 'PENDING', ...dateFilter },
-      }),
-      this.prisma.complianceTask.count({
-        where: { status: 'COMPLETED', ...dateFilter },
-      }),
-      this.prisma.complianceTask.count({
-        where: { status: 'SKIPPED', ...dateFilter },
-      }),
-      this.prisma.complianceTask.count({
-        where: {
-          status: 'PENDING',
-          dueDate: { lt: today },
-          ...dateFilter,
-        },
-      }),
-      this.prisma.user.count({ where: { isActive: true } }),
-      this.prisma.csvImportJob.findMany({
-        orderBy: { createdAt: 'desc' },
-        take: 5,
-        include: {
-          uploader: { select: { name: true, email: true } },
-        },
-      }),
-    ]);
+    // Fetch all data in a single parallel batch — replaces ~160 queries with 4
+    const [tasks, totalUsers, recentImports, users, departments] =
+      await Promise.all([
+        this.prisma.complianceTask.findMany({
+          where: dateFilter,
+          select: {
+            status: true,
+            dueDate: true,
+            departmentId: true,
+            ownerId: true,
+            createdAt: true,
+            completedAt: true,
+          },
+        }),
+        this.prisma.user.count({ where: { isActive: true } }),
+        this.prisma.csvImportJob.findMany({
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+          include: {
+            uploader: { select: { name: true, email: true } },
+          },
+        }),
+        this.prisma.user.findMany({
+          select: { id: true, name: true, email: true },
+        }),
+        this.prisma.department.findMany({
+          select: { id: true, name: true },
+        }),
+      ]);
 
-    // Department-wise stats
-    const departmentStats = await this.prisma.complianceTask.groupBy({
-      by: ['departmentId'],
-      where: dateFilter,
-      _count: { _all: true },
-    });
+    // Aggregate top-level counts in memory
+    let pendingTasks = 0;
+    let completedTasks = 0;
+    let skippedTasks = 0;
+    let overdueTasksCount = 0;
 
-    const departmentStatsWithNames = await Promise.all(
-      departmentStats.map(async (stat) => {
-        const [department, pending, completed, skipped, overdue] = await Promise.all([
-          this.prisma.department.findUnique({
-            where: { id: stat.departmentId },
-          }),
-          this.prisma.complianceTask.count({
-            where: {
-              departmentId: stat.departmentId,
-              status: 'PENDING',
-              ...dateFilter,
-            },
-          }),
-          this.prisma.complianceTask.count({
-            where: {
-              departmentId: stat.departmentId,
-              status: 'COMPLETED',
-              ...dateFilter,
-            },
-          }),
-          this.prisma.complianceTask.count({
-            where: {
-              departmentId: stat.departmentId,
-              status: 'SKIPPED',
-              ...dateFilter,
-            },
-          }),
-          this.prisma.complianceTask.count({
-            where: {
-              departmentId: stat.departmentId,
-              status: 'PENDING',
-              dueDate: { lt: today },
-              ...dateFilter,
-            },
-          }),
-        ]);
+    const departmentMap = new Map(departments.map((d) => [d.id, d.name]));
+    const userMap = new Map(users.map((u) => [u.id, { name: u.name, email: u.email }]));
 
-        return {
-          departmentId: stat.departmentId,
-          departmentName: department?.name || 'Unknown',
-          totalTasks: stat._count._all,
-          pendingCount: pending,
-          completedCount: completed,
-          skippedCount: skipped,
-          overdueCount: overdue,
-        };
-      }),
-    );
+    const deptAgg = new Map<string, { total: number; pending: number; completed: number; skipped: number; overdue: number }>();
+    const ownerAgg = new Map<string, { total: number; pending: number; completed: number; skipped: number; overdue: number }>();
 
-    // Owner-wise stats (assigned persons)
-    const ownerStats = await this.prisma.complianceTask.groupBy({
-      by: ['ownerId'],
-      where: dateFilter,
-      _count: { _all: true },
-    });
+    for (const task of tasks) {
+      const isPending = task.status === 'PENDING';
+      const isCompleted = task.status === 'COMPLETED';
+      const isSkipped = task.status === 'SKIPPED';
+      const isOverdue = isPending && task.dueDate != null && task.dueDate < today;
 
-    const ownerStatsWithNames = await Promise.all(
-      ownerStats.map(async (stat) => {
-        const [owner, pending, completed, skipped, overdue] = await Promise.all([
-          this.prisma.user.findUnique({
-            where: { id: stat.ownerId },
-            select: { name: true, email: true },
-          }),
-          this.prisma.complianceTask.count({
-            where: {
-              ownerId: stat.ownerId,
-              status: 'PENDING',
-              ...dateFilter,
-            },
-          }),
-          this.prisma.complianceTask.count({
-            where: {
-              ownerId: stat.ownerId,
-              status: 'COMPLETED',
-              ...dateFilter,
-            },
-          }),
-          this.prisma.complianceTask.count({
-            where: {
-              ownerId: stat.ownerId,
-              status: 'SKIPPED',
-              ...dateFilter,
-            },
-          }),
-          this.prisma.complianceTask.count({
-            where: {
-              ownerId: stat.ownerId,
-              status: 'PENDING',
-              dueDate: { lt: today },
-              ...dateFilter,
-            },
-          }),
-        ]);
+      if (isPending) pendingTasks++;
+      if (isCompleted) completedTasks++;
+      if (isSkipped) skippedTasks++;
+      if (isOverdue) overdueTasksCount++;
 
-        return {
-          ownerId: stat.ownerId,
-          ownerName: owner?.name || 'Unknown',
-          ownerEmail: owner?.email || '',
-          totalTasks: stat._count._all,
-          pendingCount: pending,
-          completedCount: completed,
-          skippedCount: skipped,
-          overdueCount: overdue,
-        };
-      }),
-    );
+      // Department aggregation
+      let ds = deptAgg.get(task.departmentId);
+      if (!ds) {
+        ds = { total: 0, pending: 0, completed: 0, skipped: 0, overdue: 0 };
+        deptAgg.set(task.departmentId, ds);
+      }
+      ds.total++;
+      if (isPending) ds.pending++;
+      if (isCompleted) ds.completed++;
+      if (isSkipped) ds.skipped++;
+      if (isOverdue) ds.overdue++;
 
-    // Task completion trends (last 7 days)
-    const trendData = await this.getTaskTrends(dateFilter);
+      // Owner aggregation
+      let os = ownerAgg.get(task.ownerId);
+      if (!os) {
+        os = { total: 0, pending: 0, completed: 0, skipped: 0, overdue: 0 };
+        ownerAgg.set(task.ownerId, os);
+      }
+      os.total++;
+      if (isPending) os.pending++;
+      if (isCompleted) os.completed++;
+      if (isSkipped) os.skipped++;
+      if (isOverdue) os.overdue++;
+    }
+
+    const departmentStatsWithNames = Array.from(deptAgg.entries()).map(([departmentId, s]) => ({
+      departmentId,
+      departmentName: departmentMap.get(departmentId) || 'Unknown',
+      totalTasks: s.total,
+      pendingCount: s.pending,
+      completedCount: s.completed,
+      skippedCount: s.skipped,
+      overdueCount: s.overdue,
+    }));
+
+    const ownerStatsWithNames = Array.from(ownerAgg.entries()).map(([ownerId, s]) => ({
+      ownerId,
+      ownerName: userMap.get(ownerId)?.name || 'Unknown',
+      ownerEmail: userMap.get(ownerId)?.email || '',
+      totalTasks: s.total,
+      pendingCount: s.pending,
+      completedCount: s.completed,
+      skippedCount: s.skipped,
+      overdueCount: s.overdue,
+    }));
+
+    // Trends computed from already-fetched data — replaces 14 sequential queries with 0
+    const trendData = this.computeTrends(tasks);
 
     return {
-      totalTasks,
+      totalTasks: tasks.length,
       pendingTasks,
       completedTasks,
       skippedTasks,
@@ -378,7 +301,6 @@ export class DashboardService {
     };
   }
 
-  // Helper method to build date filter
   private buildDateFilter(startDate?: string, endDate?: string) {
     const filter: any = {};
 
@@ -388,7 +310,6 @@ export class DashboardService {
         filter.createdAt.gte = new Date(startDate);
       }
       if (endDate) {
-        // Add 1 day to include the entire end date
         const end = new Date(endDate);
         end.setDate(end.getDate() + 1);
         filter.createdAt.lt = end;
@@ -398,13 +319,14 @@ export class DashboardService {
     return filter;
   }
 
-  // Get task completion trends for the last 7 days
-  private async getTaskTrends(dateFilter: any) {
+  // Compute 7-day trends in memory from already-fetched task list
+  private computeTrends(tasks: { createdAt: Date; completedAt: Date | null; status: string }[]) {
     const days = 7;
     const labels: string[] = [];
-    const completed: number[] = [];
     const created: number[] = [];
+    const completed: number[] = [];
 
+    const buckets: { start: Date; end: Date }[] = [];
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
@@ -413,41 +335,30 @@ export class DashboardService {
       const nextDate = new Date(date);
       nextDate.setDate(date.getDate() + 1);
 
-      // Format label
-      labels.push(date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }));
+      labels.push(
+        date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+      );
+      buckets.push({ start: date, end: nextDate });
+      created.push(0);
+      completed.push(0);
+    }
 
-      // Count tasks created on this day
-      const createdCount = await this.prisma.complianceTask.count({
-        where: {
-          ...dateFilter,
-          createdAt: {
-            gte: date,
-            lt: nextDate,
-          },
-        },
-      });
-
-      // Count tasks completed on this day
-      const completedCount = await this.prisma.complianceTask.count({
-        where: {
-          status: 'COMPLETED',
-          completedAt: {
-            gte: date,
-            lt: nextDate,
-          },
-        },
-      });
-
-      created.push(createdCount);
-      completed.push(completedCount);
+    for (const task of tasks) {
+      for (let i = 0; i < buckets.length; i++) {
+        const { start, end } = buckets[i];
+        if (task.createdAt >= start && task.createdAt < end) {
+          created[i]++;
+        }
+        if (task.completedAt && task.completedAt >= start && task.completedAt < end) {
+          completed[i]++;
+        }
+      }
     }
 
     return { labels, created, completed };
   }
 
-  // System health check (for admin settings page)
   async getSystemHealth() {
-    // Check Database
     let dbStatus = 'OK';
     let dbMessage = 'Database connection is healthy';
     let dbResponseTime = 0;
@@ -460,7 +371,6 @@ export class DashboardService {
       dbMessage = 'Database connection failed';
     }
 
-    // Check SharePoint configuration
     const sharePointConfig = await this.integrationsService.getSharePointConfig();
     const sharePointConfigured = !!(
       sharePointConfig.siteId &&
@@ -473,7 +383,6 @@ export class DashboardService {
       ? 'SharePoint integration is configured'
       : 'SharePoint integration is not configured';
 
-    // Check Teams configuration
     const teamsConfig = await this.integrationsService.getTeamsConfig();
     const teamsConfigured = !!(
       teamsConfig.webhookUrl &&

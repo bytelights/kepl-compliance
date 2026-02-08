@@ -90,10 +90,33 @@ export class CsvImportService {
       },
     });
 
-    // Validate and process each row
+    // Pre-load all unique master data and users to avoid per-row DB lookups
+    const uniqueEntities = [...new Set(rows.map((r) => r['Operating Unit']?.trim()).filter(Boolean))];
+    const uniqueDepartments = [...new Set(rows.map((r) => r['Department']?.trim()).filter(Boolean))];
+    const uniqueLaws = [...new Set(rows.map((r) => r['Name of Law']?.trim()).filter(Boolean))];
+    const uniqueEmails = [
+      ...new Set([
+        ...rows.map((r) => r['Owner']?.trim()),
+        ...rows.map((r) => r['Reviewer']?.trim()),
+      ].filter(Boolean)),
+    ];
+
+    const [entityList, departmentList, lawList, userList] = await Promise.all([
+      this.prisma.entity.findMany({ where: { name: { in: uniqueEntities } }, select: { id: true, name: true } }),
+      this.prisma.department.findMany({ where: { name: { in: uniqueDepartments } }, select: { id: true, name: true } }),
+      this.prisma.law.findMany({ where: { name: { in: uniqueLaws } }, select: { id: true, name: true } }),
+      this.prisma.user.findMany({ where: { email: { in: uniqueEmails } }, select: { id: true, email: true } }),
+    ]);
+
+    const entityCache = new Map(entityList.map((e) => [e.name, e]));
+    const departmentCache = new Map(departmentList.map((d) => [d.name, d]));
+    const lawCache = new Map(lawList.map((l) => [l.name, l]));
+    const userCache = new Map(userList.map((u) => [u.email, u]));
+
+    // Validate and process each row using cached lookups
     const results = await Promise.all(
       rows.map((row, index) =>
-        this.validateAndProcessRow(row, index + 1, job.id, mode),
+        this.validateAndProcessRow(row, index + 1, job.id, mode, entityCache, departmentCache, lawCache, userCache),
       ),
     );
 
@@ -143,6 +166,10 @@ export class CsvImportService {
     rowNumber: number,
     jobId: string,
     mode: 'preview' | 'commit',
+    entityCache: Map<string, { id: string; name: string }>,
+    departmentCache: Map<string, { id: string; name: string }>,
+    lawCache: Map<string, { id: string; name: string }>,
+    userCache: Map<string, { id: string; email: string }>,
   ): Promise<ValidationResult> {
     const errors: string[] = [];
 
@@ -181,32 +208,33 @@ export class CsvImportService {
         return { valid: false, errors };
       }
 
-      // Auto-create or find master data
-      const entity = await this.masterDataService.findOrCreate(
-        'entities',
-        row['Operating Unit'].trim(),
-      );
+      // Use pre-loaded cache, fall back to findOrCreate only for new entries
+      let entity = entityCache.get(row['Operating Unit'].trim());
+      if (!entity) {
+        entity = await this.masterDataService.findOrCreate('entities', row['Operating Unit'].trim());
+        if (entity) entityCache.set(row['Operating Unit'].trim(), { id: entity.id, name: (entity as any).name });
+      }
 
-      const department = await this.masterDataService.findOrCreate(
-        'departments',
-        row['Department'].trim(),
-      );
+      let department = departmentCache.get(row['Department'].trim());
+      if (!department) {
+        department = await this.masterDataService.findOrCreate('departments', row['Department'].trim());
+        if (department) departmentCache.set(row['Department'].trim(), { id: department.id, name: (department as any).name });
+      }
 
-      const law = await this.masterDataService.findOrCreate(
-        'laws',
-        row['Name of Law'].trim(),
-      );
+      let law = lawCache.get(row['Name of Law'].trim());
+      if (!law) {
+        law = await this.masterDataService.findOrCreate('laws', row['Name of Law'].trim());
+        if (law) lawCache.set(row['Name of Law'].trim(), { id: law.id, name: (law as any).name });
+      }
 
-      // Find owner and reviewer (must exist)
-      const owner = await this.usersService.findByEmail(row['Owner'].trim());
+      // Use pre-loaded user cache
+      const owner = userCache.get(row['Owner'].trim());
 
       if (!owner) {
         errors.push(`Owner email not found: ${row['Owner']}`);
       }
 
-      const reviewer = await this.usersService.findByEmail(
-        row['Reviewer'].trim(),
-      );
+      const reviewer = userCache.get(row['Reviewer'].trim());
 
       if (!reviewer) {
         errors.push(`Reviewer email not found: ${row['Reviewer']}`);

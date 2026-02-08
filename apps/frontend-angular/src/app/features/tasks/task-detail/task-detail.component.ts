@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -102,7 +103,7 @@ export class TaskDetailComponent implements OnInit {
     private authService: AuthService,
     private snackBar: MatSnackBar,
     private dialogService: DialogService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
   ) {}
 
   ngOnInit() {
@@ -192,6 +193,17 @@ export class TaskDetailComponent implements OnInit {
     return iconMap[ext] || 'insert_drive_file';
   }
 
+  getEvidenceFileIcon(mimeType: string): string {
+    if (!mimeType) return 'insert_drive_file';
+    if (mimeType === 'application/pdf') return 'picture_as_pdf';
+    if (mimeType.startsWith('image/')) return 'image';
+    if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) return 'table_chart';
+    if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) return 'slideshow';
+    if (mimeType.includes('word') || mimeType.includes('document')) return 'description';
+    if (mimeType.startsWith('text/')) return 'text_snippet';
+    return 'insert_drive_file';
+  }
+
   completeTask() {
     if (!this.task || !this.completeComment) return;
     
@@ -233,17 +245,22 @@ export class TaskDetailComponent implements OnInit {
   private async uploadFilesToSharePoint(): Promise<void> {
     if (!this.task) return;
 
-    // TODO: Implement SharePoint upload API call
-    // For now, we'll simulate the upload
-    return new Promise((resolve, reject) => {
-      this.snackBar.open('Uploading files to SharePoint...', '', { duration: 2000 });
-      
-      // Simulate upload delay
-      setTimeout(() => {
-        // TODO: Replace with actual API call to upload files
-        // this.taskService.uploadEvidence(this.task.id, this.selectedFiles).subscribe(...)
-        resolve();
-      }, 1500);
+    for (let i = 0; i < this.selectedFiles.length; i++) {
+      const file = this.selectedFiles[i];
+      this.snackBar.open(`Uploading ${file.name} (${i + 1}/${this.selectedFiles.length})...`, '', { duration: 0 });
+
+      const response = await firstValueFrom(
+        this.taskService.uploadEvidence(this.task.id, file)
+      );
+
+      if (!response.success) {
+        throw new Error(`Failed to upload ${file.name}`);
+      }
+    }
+
+    this.snackBar.open(`${this.selectedFiles.length} file(s) uploaded successfully`, 'Close', {
+      duration: 3000,
+      panelClass: ['success-snackbar'],
     });
   }
 
