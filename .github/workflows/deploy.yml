@@ -1,0 +1,76 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'apps/**'
+
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy Application
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Pull latest code on EC2
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'ENDSSH'
+            cd /home/ec2-user/kepl-compliance
+            git fetch origin
+            git checkout ${{ github.ref_name }}
+            git pull origin ${{ github.ref_name }}
+          ENDSSH
+
+      - name: Clean Docker build cache
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'ENDSSH'
+            docker builder prune -af 2>/dev/null || true
+          ENDSSH
+
+      - name: Build and deploy containers
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'ENDSSH'
+            cd /home/ec2-user/kepl-compliance/apps
+            docker-compose build --no-cache frontend backend
+            docker-compose up -d frontend backend
+          ENDSSH
+
+      - name: Verify deployment
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'ENDSSH'
+            echo "=== Running Containers ==="
+            docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+            echo ""
+            echo "=== Health Check ==="
+            sleep 5
+            FRONTEND_STATUS=$(docker inspect --format='{{.State.Running}}' frontend-angular 2>/dev/null)
+            BACKEND_STATUS=$(docker inspect --format='{{.State.Running}}' backend-nest 2>/dev/null)
+            NGINX_STATUS=$(docker inspect --format='{{.State.Running}}' nginx-proxy 2>/dev/null)
+
+            if [ "$FRONTEND_STATUS" = "true" ] && [ "$BACKEND_STATUS" = "true" ] && [ "$NGINX_STATUS" = "true" ]; then
+              echo "All services are running."
+            else
+              echo "WARNING: Some services are not running!"
+              echo "  frontend: $FRONTEND_STATUS"
+              echo "  backend:  $BACKEND_STATUS"
+              echo "  nginx:    $NGINX_STATUS"
+              exit 1
+            fi
+          ENDSSH
+
+      - name: Cleanup SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
