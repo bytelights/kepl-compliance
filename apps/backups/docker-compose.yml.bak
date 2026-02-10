@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  backend:
+    build: ./backend-nest
+    container_name: backend-nest
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./backend-nest/.env
+    restart: always
+
+  frontend:
+    build: ./frontend-angular
+    container_name: frontend-angular
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: always
