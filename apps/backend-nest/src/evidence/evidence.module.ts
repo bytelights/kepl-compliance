@@ -6,9 +6,10 @@ import {
 } from './evidence.controller';
 import { SharePointService } from './sharepoint.service';
 import { TasksModule } from '../tasks/tasks.module';
+import { AuditModule } from '../audit/audit.module';
 
 @Module({
-  imports: [TasksModule],
+  imports: [TasksModule, AuditModule],
   controllers: [EvidenceController, EvidenceManagementController],
   providers: [EvidenceService, SharePointService],
   exports: [EvidenceService, SharePointService],

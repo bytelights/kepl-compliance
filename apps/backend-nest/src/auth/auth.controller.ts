@@ -26,36 +26,25 @@ export class AuthController {
   @Get('microsoft/login')
   async microsoftLogin(@Res() res: Response) {
     try {
-      console.log('🔵 Starting Microsoft login flow...');
-      console.log('🔵 Config check:', {
-        clientId: this.configService.get('MICROSOFT_CLIENT_ID'),
-        tenantId: this.configService.get('MICROSOFT_TENANT_ID'),
-        redirectUri: this.configService.get('MICROSOFT_REDIRECT_URI'),
-        hasSecret: !!this.configService.get('MICROSOFT_CLIENT_SECRET'),
-      });
-      
       const authUrl = await this.authService.getAuthUrl();
-      console.log('🔵 Generated auth URL:', authUrl);
-      console.log('🔵 About to redirect...');
-      
       // Set no-cache headers to prevent caching
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
-      
+
       return res.redirect(302, authUrl);
     } catch (error) {
-      console.error('❌ Login redirect error:', error);
+      console.error('Login redirect error:', error);
       throw new UnauthorizedException('Failed to initiate login');
     }
   }
 
   @Get('microsoft/callback')
-  async microsoftCallback(@Query('code') code: string, @Query() allParams: any, @Res() res: Response) {
-    console.log('🔵 Callback received');
-    console.log('🔵 Code:', code);
-    console.log('🔵 All query params:', allParams);
-    
+  async microsoftCallback(
+    @Query('code') code: string,
+    @Query() allParams: any,
+    @Res() res: Response,
+  ) {
     if (!code) {
       console.error('❌ No authorization code provided');
       throw new UnauthorizedException('Authorization code not provided');
@@ -84,13 +73,15 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(AuthGuard('jwt'))
-  getCurrentUser(@CurrentUser() user: JwtPayload) {
+  async getCurrentUser(@CurrentUser() user: JwtPayload) {
+    const fullUser = await this.authService.validateUser(user);
     return {
       success: true,
       data: {
-        id: user.sub,
-        email: user.email,
-        role: user.role,
+        id: fullUser.id,
+        email: fullUser.email,
+        name: fullUser.name,
+        role: fullUser.role,
       },
     };
   }
@@ -114,16 +105,16 @@ export class AuthController {
     try {
       // Validate role
       const validRoles = ['ADMIN', 'REVIEWER', 'TASK_OWNER'];
-      const userRole = validRoles.includes(role?.toUpperCase()) 
-        ? role.toUpperCase() 
+      const userRole = validRoles.includes(role?.toUpperCase())
+        ? role.toUpperCase()
         : 'ADMIN';
 
       // Create email based on role
       const email = `dev-${userRole.toLowerCase()}@test.com`;
-      
+
       // Create or get dev user with specified role
       const user = await this.authService.findOrCreateDevUser(email, userRole);
-      
+
       // Generate JWT token using injected JwtService
       const payload: JwtPayload = {
         sub: user.id,

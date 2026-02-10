@@ -12,6 +12,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CsvImportService } from './csv-import.service';
+import { AuditService } from '../audit/audit.service';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -21,7 +22,10 @@ import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Roles('admin')
 export class CsvImportController {
-  constructor(private readonly csvImportService: CsvImportService) {}
+  constructor(
+    private readonly csvImportService: CsvImportService,
+    private readonly auditService: AuditService,
+  ) {}
 
   @Post('csv')
   @UseInterceptors(FileInterceptor('file'))
@@ -47,6 +51,14 @@ export class CsvImportController {
       mode as 'preview' | 'commit',
       user.sub,
     );
+
+    if (mode === 'commit') {
+      this.auditService.logCsvImport(user.sub, result.jobId || result.job?.id || '', mode, {
+        totalRows: result.totalRows,
+        successRows: result.successRows,
+        failedRows: result.failedRows,
+      });
+    }
 
     return {
       success: true,

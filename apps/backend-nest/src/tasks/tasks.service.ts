@@ -24,9 +24,21 @@ export class TasksService {
     const skip = (page - 1) * limit;
 
     const where: any = {
-      ...(filters.entityId && { entityId: filters.entityId }),
-      ...(filters.departmentId && { departmentId: filters.departmentId }),
-      ...(filters.lawId && { lawId: filters.lawId }),
+      ...(filters.entityId && {
+        entityId: filters.entityId.includes(',')
+          ? { in: filters.entityId.split(',') }
+          : filters.entityId,
+      }),
+      ...(filters.departmentId && {
+        departmentId: filters.departmentId.includes(',')
+          ? { in: filters.departmentId.split(',') }
+          : filters.departmentId,
+      }),
+      ...(filters.lawId && {
+        lawId: filters.lawId.includes(',')
+          ? { in: filters.lawId.split(',') }
+          : filters.lawId,
+      }),
       ...(filters.status && { status: filters.status }),
       ...(filters.ownerId && { ownerId: filters.ownerId }),
       ...(filters.reviewerId && { reviewerId: filters.reviewerId }),
@@ -127,7 +139,10 @@ export class TasksService {
           },
         },
         taskExecutions: {
-          orderBy: { executedAt: 'desc' },
+          orderBy: { executedAt: 'asc' },
+          include: {
+            user: { select: { id: true, name: true, email: true } },
+          },
         },
       },
     });
@@ -197,11 +212,12 @@ export class TasksService {
   async completeTask(
     taskId: string,
     userId: string,
+    userRole: string,
     completeDto: CompleteTaskDto,
   ) {
-    const task = await this.findById(taskId, 'task_owner', userId);
+    const task = await this.findById(taskId, userRole, userId);
 
-    if (task.ownerId !== userId) {
+    if (userRole === 'task_owner' && task.ownerId !== userId) {
       throw new ForbiddenException('You can only complete your own tasks');
     }
 
@@ -233,15 +249,18 @@ export class TasksService {
 
       return tx.complianceTask.update({
         where: { id: taskId },
-        data: { status: 'COMPLETED' },
+        data: {
+          status: 'COMPLETED',
+          completedAt: completeDto.completedAt ? new Date(completeDto.completedAt) : new Date(),
+        },
       });
     });
   }
 
-  async skipTask(taskId: string, userId: string, skipDto: SkipTaskDto) {
-    const task = await this.findById(taskId, 'task_owner', userId);
+  async skipTask(taskId: string, userId: string, userRole: string, skipDto: SkipTaskDto) {
+    const task = await this.findById(taskId, userRole, userId);
 
-    if (task.ownerId !== userId) {
+    if (userRole === 'task_owner' && task.ownerId !== userId) {
       throw new ForbiddenException('You can only skip your own tasks');
     }
 

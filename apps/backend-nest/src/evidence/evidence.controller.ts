@@ -14,6 +14,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { EvidenceService } from './evidence.service';
 import { CreateUploadSessionDto } from './dto/create-upload-session.dto';
 import { CompleteUploadDto } from './dto/complete-upload.dto';
+import { AuditService } from '../audit/audit.service';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -22,7 +23,10 @@ import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 @Controller('tasks/:taskId/evidence')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 export class EvidenceController {
-  constructor(private readonly evidenceService: EvidenceService) {}
+  constructor(
+    private readonly evidenceService: EvidenceService,
+    private readonly auditService: AuditService,
+  ) {}
 
   @Post('upload-session')
   async createUploadSession(
@@ -50,6 +54,7 @@ export class EvidenceController {
       user.sub,
       file,
     );
+    this.auditService.logEvidenceUploaded(user.sub, taskId, file.originalname);
     return { success: true, data };
   }
 
@@ -81,12 +86,16 @@ export class EvidenceController {
 @Controller('evidence')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 export class EvidenceManagementController {
-  constructor(private readonly evidenceService: EvidenceService) {}
+  constructor(
+    private readonly evidenceService: EvidenceService,
+    private readonly auditService: AuditService,
+  ) {}
 
   @Delete(':id')
   @Roles('admin', 'task_owner')
   async delete(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     await this.evidenceService.delete(id, user.sub, user.role);
+    this.auditService.log({ userId: user.sub, action: 'EVIDENCE_DELETED', entityType: 'EVIDENCE', entityId: id });
     return { success: true, message: 'Evidence deleted successfully' };
   }
 }

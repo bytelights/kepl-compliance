@@ -1,24 +1,26 @@
 <div class="page-wrapper">
   <div class="page-container">
-    <!-- Page Header -->
-    <div class="page-header">
-      <div>
-        <h1>Compliance Tasks</h1>
-        <p class="page-subtitle">View and manage all compliance tasks</p>
+    <!-- Sticky Header + Filters -->
+    <div class="sticky-filters">
+      <!-- Page Header -->
+      <div class="page-header">
+        <div>
+          <h1>Compliance Tasks</h1>
+          <p class="page-subtitle">View and manage all compliance tasks</p>
+        </div>
+        <button mat-raised-button color="primary" routerLink="/tasks/new" *ngIf="canCreateTask">
+          <mat-icon>add</mat-icon>
+          Create Task
+        </button>
       </div>
-      <button mat-raised-button color="primary" routerLink="/tasks/new" *ngIf="canCreateTask">
-        <mat-icon>add</mat-icon>
-        Create Task
-      </button>
-    </div>
 
-    <!-- Filters Card -->
-    <mat-card class="content-card filters-card">
-      <mat-card-header>
-        <mat-card-title>Filters</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <form [formGroup]="filterForm" class="filters-form">
+      <!-- Filters Card -->
+      <mat-card class="content-card filters-card">
+        <mat-card-header>
+          <mat-card-title>Filters</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <form [formGroup]="filterForm" class="filters-form">
           <mat-form-field appearance="outline">
             <mat-label>Search</mat-label>
             <input matInput formControlName="search" placeholder="Search tasks..." />
@@ -37,9 +39,12 @@
 
           <mat-form-field appearance="outline">
             <mat-label>Entity</mat-label>
-            <mat-select formControlName="entityId">
-              <mat-option value="">All</mat-option>
-              <mat-option *ngFor="let entity of entities" [value]="entity.id">
+            <mat-select [(value)]="selectedEntityIds" multiple (openedChange)="entitySearch = ''">
+              <div class="select-search">
+                <input matInput [(ngModel)]="entitySearch" [ngModelOptions]="{standalone: true}" placeholder="Search entities..." (keydown)="$event.stopPropagation()" />
+                <mat-icon>search</mat-icon>
+              </div>
+              <mat-option *ngFor="let entity of getFilteredEntities()" [value]="entity.id">
                 {{ entity.name }}
               </mat-option>
             </mat-select>
@@ -47,9 +52,12 @@
 
           <mat-form-field appearance="outline">
             <mat-label>Department</mat-label>
-            <mat-select formControlName="departmentId">
-              <mat-option value="">All</mat-option>
-              <mat-option *ngFor="let dept of departments" [value]="dept.id">
+            <mat-select [(value)]="selectedDepartmentIds" multiple (openedChange)="departmentSearch = ''">
+              <div class="select-search">
+                <input matInput [(ngModel)]="departmentSearch" [ngModelOptions]="{standalone: true}" placeholder="Search departments..." (keydown)="$event.stopPropagation()" />
+                <mat-icon>search</mat-icon>
+              </div>
+              <mat-option *ngFor="let dept of getFilteredDepartments()" [value]="dept.id">
                 {{ dept.name }}
               </mat-option>
             </mat-select>
@@ -57,9 +65,12 @@
 
           <mat-form-field appearance="outline">
             <mat-label>Law</mat-label>
-            <mat-select formControlName="lawId">
-              <mat-option value="">All</mat-option>
-              <mat-option *ngFor="let law of laws" [value]="law.id">
+            <mat-select [(value)]="selectedLawIds" multiple (openedChange)="lawSearch = ''">
+              <div class="select-search">
+                <input matInput [(ngModel)]="lawSearch" [ngModelOptions]="{standalone: true}" placeholder="Search laws..." (keydown)="$event.stopPropagation()" />
+                <mat-icon>search</mat-icon>
+              </div>
+              <mat-option *ngFor="let law of getFilteredLaws()" [value]="law.id">
                 {{ law.name }}
               </mat-option>
             </mat-select>
@@ -76,8 +87,9 @@
             </button>
           </div>
         </form>
-      </mat-card-content>
-    </mat-card>
+        </mat-card-content>
+      </mat-card>
+    </div>
 
     <!-- Tasks Table -->
     <mat-card class="content-card">
