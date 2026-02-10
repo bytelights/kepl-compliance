@@ -5,26 +5,29 @@
     </div>
 
     <div *ngIf="!loading && task" class="task-content">
-      <!-- Breadcrumb -->
-      <div class="breadcrumb">
-        <a routerLink="/tasks" class="breadcrumb-link">
-          <mat-icon>arrow_back</mat-icon>
-          Tasks
-        </a>
-        <mat-icon>chevron_right</mat-icon>
-        <span class="breadcrumb-current">{{ task.complianceId }}</span>
-      </div>
-
-      <!-- Task Header -->
-      <div class="task-header">
-        <div class="header-left">
-          <div class="task-id">{{ task.complianceId }}</div>
-          <h1 class="task-title">{{ task.title }}</h1>
+      <!-- Sticky Header -->
+      <div class="sticky-header">
+        <!-- Breadcrumb -->
+        <div class="breadcrumb">
+          <a routerLink="/tasks" class="breadcrumb-link">
+            <mat-icon>arrow_back</mat-icon>
+            Tasks
+          </a>
+          <mat-icon>chevron_right</mat-icon>
+          <span class="breadcrumb-current">{{ task.complianceId }}</span>
         </div>
-        <div class="header-right">
-          <span class="status-badge" [class]="'status-' + task.status">
-            {{ task.status }}
-          </span>
+
+        <!-- Task Header -->
+        <div class="task-header">
+          <div class="header-left">
+            <div class="task-id">{{ task.complianceId }}</div>
+            <h1 class="task-title">{{ task.title }}</h1>
+          </div>
+          <div class="header-right">
+            <span class="status-badge" [class]="'status-' + task.status">
+              {{ task.status }}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -75,16 +78,44 @@
           <p>{{ task.description }}</p>
         </div>
 
-        <div *ngIf="getExecutionRemarks()" class="skip-remarks-block" 
-             [class.completed-remarks]="task.status === 'COMPLETED'">
-          <label>
-            <mat-icon>{{ getExecutionIcon() }}</mat-icon>
-            {{ getExecutionLabel() }}
-          </label>
-          <p class="skip-remarks-text">{{ getExecutionRemarks() }}</p>
-          <div class="skip-meta" *ngIf="getLatestExecution()">
-            <mat-icon>schedule</mat-icon>
-            <span>{{ getLatestExecution()?.action === 'SKIP' ? 'Skipped' : 'Completed' }} on {{ getLatestExecution()?.executedAt | date: 'MMM d, y, h:mm a' }}</span>
+      </div>
+
+      <!-- Activity Timeline -->
+      <div class="timeline-section" *ngIf="task.taskExecutions && task.taskExecutions.length > 0">
+        <h2 class="section-title">
+          <mat-icon>history</mat-icon>
+          Activity History
+        </h2>
+        <div class="activity-timeline">
+          <!-- Task Created -->
+          <div class="timeline-item">
+            <div class="timeline-marker created">
+              <mat-icon>add_circle</mat-icon>
+            </div>
+            <div class="timeline-connector"></div>
+            <div class="timeline-content">
+              <div class="timeline-date">{{ task.createdAt | date: 'MMM d, y, h:mm a' }}</div>
+              <div class="timeline-title">Task Created</div>
+              <div class="timeline-detail">Assigned to {{ task.owner?.name }}</div>
+            </div>
+          </div>
+
+          <!-- Execution entries -->
+          <div class="timeline-item" *ngFor="let exec of task.taskExecutions; let last = last">
+            <div class="timeline-marker" [class.completed]="exec.action === 'COMPLETE'" [class.skipped]="exec.action === 'SKIP'">
+              <mat-icon>{{ exec.action === 'COMPLETE' ? 'check_circle' : 'block' }}</mat-icon>
+            </div>
+            <div class="timeline-connector" *ngIf="!last"></div>
+            <div class="timeline-content">
+              <div class="timeline-date">{{ exec.executedAt | date: 'MMM d, y, h:mm a' }}</div>
+              <div class="timeline-title">
+                {{ exec.action === 'COMPLETE' ? 'Task Completed' : 'Task Skipped' }}
+              </div>
+              <div class="timeline-detail" *ngIf="exec.user">by {{ exec.user.name }}</div>
+              <div class="timeline-comment" *ngIf="exec.comment || exec.remarks">
+                {{ exec.comment || exec.remarks }}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -183,23 +214,36 @@
             </div>
             <div class="step-content">
               <div class="step-header">
-                <h3>Add Completion Comment</h3>
+                <h3>Add Completion Details</h3>
                 <span class="step-badge required">Required</span>
               </div>
-              <p class="step-description">Provide details about task completion</p>
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Completion Comment</mat-label>
-                <textarea
-                  matInput
-                  rows="4"
-                  [(ngModel)]="completeComment"
-                  placeholder="Enter details about how the task was completed..."
-                  [disabled]="!selectedFiles.length && !(task.evidenceFiles?.length || 0)"
-                ></textarea>
-                <mat-hint *ngIf="!selectedFiles.length && !(task.evidenceFiles?.length || 0)"
-                  >Select evidence files first to enable this field</mat-hint
-                >
-              </mat-form-field>
+              <p class="step-description">Provide completion date and details</p>
+              <div class="completion-fields">
+                <mat-form-field appearance="outline">
+                  <mat-label>Completion Date</mat-label>
+                  <input
+                    matInput
+                    [matDatepicker]="completedAtPicker"
+                    [(ngModel)]="completedAt"
+                    [disabled]="!selectedFiles.length && !(task.evidenceFiles?.length || 0)"
+                  />
+                  <mat-datepicker-toggle matSuffix [for]="completedAtPicker"></mat-datepicker-toggle>
+                  <mat-datepicker #completedAtPicker></mat-datepicker>
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Completion Comment</mat-label>
+                  <textarea
+                    matInput
+                    rows="4"
+                    [(ngModel)]="completeComment"
+                    placeholder="Enter details about how the task was completed..."
+                    [disabled]="!selectedFiles.length && !(task.evidenceFiles?.length || 0)"
+                  ></textarea>
+                  <mat-hint *ngIf="!selectedFiles.length && !(task.evidenceFiles?.length || 0)"
+                    >Select evidence files first to enable this field</mat-hint
+                  >
+                </mat-form-field>
+              </div>
             </div>
           </div>
 

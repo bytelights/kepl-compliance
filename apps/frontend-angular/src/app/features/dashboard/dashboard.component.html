@@ -11,7 +11,6 @@
     <div class="page-header">
       <div>
         <h1>Dashboard</h1>
-        <p class="page-subtitle">Welcome back, {{ user?.name }}</p>
       </div>
     </div>
 
@@ -289,37 +288,6 @@
         </mat-card>
       </div>
 
-      <!-- Quick Actions - Redesigned -->
-      <mat-card class="content-card quick-actions-card">
-        <mat-card-header>
-          <mat-card-title>Quick Actions</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="quick-actions-grid">
-            <button mat-flat-button class="quick-action-btn" routerLink="/tasks">
-              <mat-icon>view_list</mat-icon>
-              <span>All Tasks</span>
-            </button>
-            <button mat-flat-button class="quick-action-btn" routerLink="/tasks" [queryParams]="{status: 'PENDING'}">
-              <mat-icon>pending_actions</mat-icon>
-              <span>Pending</span>
-            </button>
-            <button *ngIf="isAdmin()" mat-flat-button class="quick-action-btn" routerLink="/admin/import">
-              <mat-icon>upload_file</mat-icon>
-              <span>Import CSV</span>
-            </button>
-            <button *ngIf="isAdmin()" mat-flat-button class="quick-action-btn" routerLink="/admin/users">
-              <mat-icon>people</mat-icon>
-              <span>Users</span>
-            </button>
-            <button *ngIf="isAdmin()" mat-flat-button class="quick-action-btn" routerLink="/admin/master-data">
-              <mat-icon>storage</mat-icon>
-              <span>Master Data</span>
-            </button>
-          </div>
-        </mat-card-content>
-      </mat-card>
-
       <!-- Admin Charts - Moved to Bottom with More Visualizations -->
       <div *ngIf="isAdmin() && adminData">
         <h2 class="section-title">Analytics & Insights</h2>
@@ -369,7 +337,7 @@
                 <canvas baseChart
                   [type]="barChartType"
                   [data]="adminDepartmentChartData"
-                  [options]="barChartOptions">
+                  [options]="departmentBarChartOptions">
                 </canvas>
               </div>
             </mat-card-content>
@@ -384,7 +352,7 @@
                 <canvas baseChart
                   [type]="barChartType"
                   [data]="adminOwnerChartData"
-                  [options]="barChartOptions">
+                  [options]="ownerBarChartOptions">
                 </canvas>
               </div>
             </mat-card-content>
@@ -420,10 +388,104 @@
         </div>
       </div>
 
-      <!-- Reviewer Charts - Moved to Bottom -->
+      <!-- Reviewer Dashboard -->
       <div *ngIf="isReviewer() && reviewerData">
+        <!-- Reviewer Stats Cards -->
+        <div class="stats-grid">
+          <mat-card class="stat-card">
+            <mat-card-content>
+              <div class="stat-content">
+                <div class="stat-info">
+                  <div class="stat-label">Total Tasks</div>
+                  <div class="stat-value">{{ reviewerData.totalTasks }}</div>
+                </div>
+                <div class="stat-icon primary">
+                  <mat-icon>assignment</mat-icon>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="stat-card">
+            <mat-card-content>
+              <div class="stat-content">
+                <div class="stat-info">
+                  <div class="stat-label">Pending</div>
+                  <div class="stat-value">{{ reviewerData.pendingTasks }}</div>
+                </div>
+                <div class="stat-icon pending">
+                  <mat-icon>pending_actions</mat-icon>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="stat-card">
+            <mat-card-content>
+              <div class="stat-content">
+                <div class="stat-info">
+                  <div class="stat-label">Completed</div>
+                  <div class="stat-value">{{ reviewerData.completedTasks }}</div>
+                </div>
+                <div class="stat-icon success">
+                  <mat-icon>check_circle</mat-icon>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="stat-card">
+            <mat-card-content>
+              <div class="stat-content">
+                <div class="stat-info">
+                  <div class="stat-label">Skipped</div>
+                  <div class="stat-value">{{ reviewerData.skippedTasks }}</div>
+                </div>
+                <div class="stat-icon skipped">
+                  <mat-icon>block</mat-icon>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="stat-card">
+            <mat-card-content>
+              <div class="stat-content">
+                <div class="stat-info">
+                  <div class="stat-label">Overdue</div>
+                  <div class="stat-value">{{ reviewerData.overdueTasks }}</div>
+                </div>
+                <div class="stat-icon danger">
+                  <mat-icon>warning</mat-icon>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+
         <h2 class="section-title">Analytics & Insights</h2>
+
+        <!-- Status Doughnut + Entity Bar -->
         <div class="charts-row">
+          <mat-card class="content-card chart-card">
+            <mat-card-header>
+              <mat-card-title>Task Status Distribution</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="chart-container doughnut-chart">
+                <canvas baseChart
+                  [type]="doughnutChartType"
+                  [data]="reviewerStatusChartData"
+                  [options]="doughnutChartOptions">
+                </canvas>
+                <div class="chart-center-label">
+                  <div class="center-number">{{ reviewerData.totalTasks }}</div>
+                  <div class="center-text">Total Tasks</div>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
           <mat-card class="content-card chart-card">
             <mat-card-header>
               <mat-card-title>Entity-wise Compliance Health</mat-card-title>
@@ -433,12 +495,15 @@
                 <canvas baseChart
                   [type]="barChartType"
                   [data]="reviewerEntityChartData"
-                  [options]="barChartOptions">
+                  [options]="entityBarChartOptions">
                 </canvas>
               </div>
             </mat-card-content>
           </mat-card>
+        </div>
 
+        <!-- Department + Law Bar -->
+        <div class="charts-row">
           <mat-card class="content-card chart-card">
             <mat-card-header>
               <mat-card-title>Department-wise Statistics</mat-card-title>
@@ -448,33 +513,48 @@
                 <canvas baseChart
                   [type]="barChartType"
                   [data]="reviewerDepartmentChartData"
-                  [options]="barChartOptions">
+                  [options]="departmentBarChartOptions">
                 </canvas>
               </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="content-card chart-card">
+            <mat-card-header>
+              <mat-card-title>Law / Regulation-wise Statistics</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="chart-container">
+                <canvas baseChart
+                  [type]="barChartType"
+                  [data]="reviewerLawChartData"
+                  [options]="lawBarChartOptions">
+                </canvas>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+
+        <!-- Overdue Tasks List -->
+        <mat-card class="content-card" *ngIf="reviewerData.overdueTasksList.length">
+          <mat-card-header>
+            <mat-card-title>Overdue Tasks Requiring Attention</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="overdue-list">
+              <div class="overdue-item" *ngFor="let task of reviewerData.overdueTasksList">
+                <mat-icon class="overdue-icon">warning</mat-icon>
+                <div class="overdue-info">
+                  <div class="overdue-title">{{ task.title }}</div>
+                  <div class="overdue-meta">
+                    {{ task.entity?.name }} • {{ task.department?.name }} • Due: {{ task.dueDate | date:'short' }}
+                  </div>
+                </div>
+                <button mat-stroked-button [routerLink]="['/tasks', task.id]">View</button>
+              </div>
+            </div>
           </mat-card-content>
         </mat-card>
       </div>
-
-      <!-- Overdue Tasks List -->
-      <mat-card class="content-card" *ngIf="isReviewer() && reviewerData.overdueTasks.length">
-        <mat-card-header>
-          <mat-card-title>Overdue Tasks Requiring Attention</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="overdue-list">
-            <div class="overdue-item" *ngFor="let task of reviewerData.overdueTasks">
-              <mat-icon class="overdue-icon">warning</mat-icon>
-              <div class="overdue-info">
-                <div class="overdue-title">{{ task.title }}</div>
-                <div class="overdue-meta">
-                  {{ task.entity?.name }} • {{ task.department?.name }} • Due: {{ task.dueDate | date:'short' }}
-                </div>
-              </div>
-              <button mat-stroked-button [routerLink]="['/tasks', task.id]">View</button>
-            </div>
-          </div>
-        </mat-card-content>
-      </mat-card>
-    </div>
   </div>
 </div>

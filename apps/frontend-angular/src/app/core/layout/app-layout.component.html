@@ -1,10 +1,13 @@
 <mat-toolbar color="primary" class="app-toolbar">
   <div class="toolbar-container">
-    <img src="/images/logo.png" alt="Kelp" class="header-logo" routerLink="/dashboard">
+    <img src="/images/logo.png" alt="Kelp" class="header-logo" routerLink="/dashboard" />
     <span class="spacer"></span>
-    <span class="user-info" *ngIf="user">{{ user?.name || user?.email }}</span>
+    <span class="user-info" *ngIf="user">Welcome, {{ user?.name }}</span>
     <button mat-icon-button routerLink="/admin/settings" matTooltip="Settings" *ngIf="isAdmin()">
       <mat-icon>settings</mat-icon>
+    </button>
+    <button mat-icon-button routerLink="/tasks" matTooltip="Tasks">
+      <mat-icon>assignment</mat-icon>
     </button>
     <button mat-icon-button routerLink="/dashboard" matTooltip="Dashboard">
       <mat-icon>dashboard</mat-icon>

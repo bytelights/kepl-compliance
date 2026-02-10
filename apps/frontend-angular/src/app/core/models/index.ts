@@ -53,6 +53,7 @@ export interface TaskExecution {
   comment?: string;
   remarks?: string;
   executedAt: string;
+  user?: { id: string; name: string; email: string };
 }
 
 export interface ComplianceTask {
@@ -143,9 +144,15 @@ export interface TaskOwnerDashboard {
 }
 
 export interface ReviewerDashboard {
+  totalTasks: number;
+  pendingTasks: number;
+  completedTasks: number;
+  skippedTasks: number;
+  overdueTasks: number;
   entityStats: EntityStat[];
   departmentStats: DepartmentStat[];
-  overdueTasks: ComplianceTask[];
+  lawStats: LawStat[];
+  overdueTasksList: ComplianceTask[];
 }
 
 export interface AdminDashboard {
@@ -181,6 +188,15 @@ export interface SystemHealth {
     message: string;
     configured: boolean;
   };
+}
+
+export interface LawStat {
+  lawId: string;
+  lawName: string;
+  totalTasks: number;
+  pendingCount: number;
+  completedCount: number;
+  overdueCount: number;
 }
 
 export interface EntityStat {

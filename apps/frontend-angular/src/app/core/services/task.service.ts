@@ -57,7 +57,7 @@ export class TaskService {
     return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}`);
   }
 
-  completeTask(id: string, data: { comment: string }): Observable<ApiResponse<ComplianceTask>> {
+  completeTask(id: string, data: { comment: string; completedAt?: string }): Observable<ApiResponse<ComplianceTask>> {
     return this.http.post<ApiResponse<ComplianceTask>>(
       `${this.apiUrl}/${id}/execute/complete`,
       data

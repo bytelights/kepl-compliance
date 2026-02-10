@@ -6,7 +6,6 @@ import { TeamsService } from './teams.service';
 import { ExportService } from './export.service';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @Controller('reports')
 @UseGuards(AuthGuard('jwt'), RolesGuard)

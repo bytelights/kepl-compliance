@@ -24,15 +24,15 @@ export class TaskListQueryDto {
   @IsOptional()
   limit?: number;
 
-  @IsUUID()
+  @IsString()
   @IsOptional()
   entityId?: string;
 
-  @IsUUID()
+  @IsString()
   @IsOptional()
   departmentId?: string;
 
-  @IsUUID()
+  @IsString()
   @IsOptional()
   lawId?: string;
 

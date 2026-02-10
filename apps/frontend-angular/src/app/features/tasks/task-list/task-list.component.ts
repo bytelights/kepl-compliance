@@ -1,6 +1,6 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -17,6 +17,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { TaskService } from '../../../core/services/task.service';
 import { MasterDataService } from '../../../core/services/master-data.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -46,6 +47,7 @@ import { ComplianceTask, Entity, Department, Law } from '../../../core/models';
     MatToolbarModule,
     MatSnackBarModule,
     MatMenuModule,
+    MatAutocompleteModule,
   ],
   templateUrl: './task-list.component.html',
   styleUrls: ['./task-list.component.css'],
@@ -55,7 +57,13 @@ export class TaskListComponent implements OnInit {
   entities: Entity[] = [];
   departments: Department[] = [];
   laws: Law[] = [];
-  
+  selectedEntityIds: string[] = [];
+  selectedDepartmentIds: string[] = [];
+  selectedLawIds: string[] = [];
+  entitySearch = '';
+  departmentSearch = '';
+  lawSearch = '';
+
   loading = true;
   loadingMore = false;
   totalTasks = 0;
@@ -92,18 +100,29 @@ export class TaskListComponent implements OnInit {
     private fb: FormBuilder,
     private snackBar: MatSnackBar,
     private dialogService: DialogService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {
     this.filterForm = this.fb.group({
       search: [''],
       status: [''],
-      entityId: [''],
-      departmentId: [''],
-      lawId: [''],
+      ownerId: [''],
     });
   }
 
   ngOnInit() {
+    this.route.queryParams.subscribe((params) => {
+      const patch: any = {};
+      if (params['status']) patch.status = params['status'];
+      if (params['search']) patch.search = params['search'];
+      if (params['ownerId']) patch.ownerId = params['ownerId'];
+      if (Object.keys(patch).length) {
+        this.filterForm.patchValue(patch);
+      }
+      if (params['entityId']) this.selectedEntityIds = [params['entityId']];
+      if (params['departmentId']) this.selectedDepartmentIds = [params['departmentId']];
+      if (params['lawId']) this.selectedLawIds = [params['lawId']];
+    });
     this.loadMasterData();
     this.loadTasks();
   }
@@ -143,11 +162,14 @@ export class TaskListComponent implements OnInit {
       this.tasks = [];
     }
 
-    const filters = {
+    const filters: any = {
       page: this.currentPage + 1,
       limit: this.pageSize,
       ...this.filterForm.value,
     };
+    if (this.selectedEntityIds.length) filters.entityId = this.selectedEntityIds.join(',');
+    if (this.selectedDepartmentIds.length) filters.departmentId = this.selectedDepartmentIds.join(',');
+    if (this.selectedLawIds.length) filters.lawId = this.selectedLawIds.join(',');
 
     this.taskService.getTasks(filters).subscribe({
       next: (response) => {
@@ -196,11 +218,33 @@ export class TaskListComponent implements OnInit {
     this.filterForm.reset({
       search: '',
       status: '',
-      entityId: '',
-      departmentId: '',
-      lawId: '',
+      ownerId: '',
     });
+    this.selectedEntityIds = [];
+    this.selectedDepartmentIds = [];
+    this.selectedLawIds = [];
+    this.entitySearch = '';
+    this.departmentSearch = '';
+    this.lawSearch = '';
     this.applyFilters();
+  }
+
+  getFilteredEntities(): Entity[] {
+    const filter = (this.entitySearch || '').toLowerCase();
+    if (!filter) return this.entities;
+    return this.entities.filter((e) => e.name.toLowerCase().includes(filter));
+  }
+
+  getFilteredDepartments(): Department[] {
+    const filter = (this.departmentSearch || '').toLowerCase();
+    if (!filter) return this.departments;
+    return this.departments.filter((d) => d.name.toLowerCase().includes(filter));
+  }
+
+  getFilteredLaws(): Law[] {
+    const filter = (this.lawSearch || '').toLowerCase();
+    if (!filter) return this.laws;
+    return this.laws.filter((l) => l.name.toLowerCase().includes(filter));
   }
 
   isOverdue(task: ComplianceTask): boolean {

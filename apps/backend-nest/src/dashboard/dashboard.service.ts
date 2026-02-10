@@ -92,18 +92,20 @@ export class DashboardService {
     const combinedFilter = { ...reviewerFilter, ...dateFilter };
 
     // Single batch: fetch all tasks + lookup tables + overdue list in parallel
-    const [tasks, entities, departments, overdueTasks] = await Promise.all([
+    const [tasks, entities, departments, laws, overdueTasks] = await Promise.all([
       this.prisma.complianceTask.findMany({
         where: combinedFilter,
         select: {
           entityId: true,
           departmentId: true,
+          lawId: true,
           status: true,
           dueDate: true,
         },
       }),
       this.prisma.entity.findMany({ select: { id: true, name: true } }),
       this.prisma.department.findMany({ select: { id: true, name: true } }),
+      this.prisma.law.findMany({ select: { id: true, name: true } }),
       this.prisma.complianceTask.findMany({
         where: {
           ...combinedFilter,
@@ -127,6 +129,7 @@ export class DashboardService {
 
     const entityMap = new Map(entities.map((e) => [e.id, e.name]));
     const departmentMap = new Map(departments.map((d) => [d.id, d.name]));
+    const lawMap = new Map(laws.map((l) => [l.id, l.name]));
 
     // Aggregate entity stats in memory — replaces N×4 queries with 0 extra queries
     const entityAgg = new Map<string, { total: number; pending: number; completed: number; overdue: number }>();
@@ -174,10 +177,49 @@ export class DashboardService {
       overdueCount: s.overdue,
     }));
 
+    // Aggregate law stats in memory
+    const lawAgg = new Map<string, { total: number; pending: number; completed: number; overdue: number }>();
+    for (const task of tasks) {
+      let s = lawAgg.get(task.lawId);
+      if (!s) {
+        s = { total: 0, pending: 0, completed: 0, overdue: 0 };
+        lawAgg.set(task.lawId, s);
+      }
+      s.total++;
+      if (task.status === 'PENDING') s.pending++;
+      if (task.status === 'COMPLETED') s.completed++;
+      if (task.status === 'PENDING' && task.dueDate && task.dueDate < today) s.overdue++;
+    }
+
+    const lawStatsWithNames = Array.from(lawAgg.entries()).map(([lawId, s]) => ({
+      lawId,
+      lawName: lawMap.get(lawId) || 'Unknown',
+      totalTasks: s.total,
+      pendingCount: s.pending,
+      completedCount: s.completed,
+      overdueCount: s.overdue,
+    }));
+
+    // Summary counts
+    let totalTasks = 0, pendingTasks = 0, completedTasks = 0, skippedTasks = 0, overdueTotalCount = 0;
+    for (const task of tasks) {
+      totalTasks++;
+      if (task.status === 'PENDING') pendingTasks++;
+      if (task.status === 'COMPLETED') completedTasks++;
+      if (task.status === 'SKIPPED') skippedTasks++;
+      if (task.status === 'PENDING' && task.dueDate && task.dueDate < today) overdueTotalCount++;
+    }
+
     return {
+      totalTasks,
+      pendingTasks,
+      completedTasks,
+      skippedTasks,
+      overdueTasks: overdueTotalCount,
       entityStats: entityStatsWithNames,
       departmentStats: departmentStatsWithNames,
-      overdueTasks,
+      lawStats: lawStatsWithNames,
+      overdueTasksList: overdueTasks,
     };
   }
 

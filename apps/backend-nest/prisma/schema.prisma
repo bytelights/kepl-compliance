@@ -34,6 +34,7 @@ model User {
   // Relations
   ownedTasks           ComplianceTask[] @relation("TaskOwner")
   reviewedTasks        ComplianceTask[] @relation("TaskReviewer")
+  taskExecutions       TaskExecution[]
   auditLogs            AuditLog[]
   csvImportJobs        CsvImportJob[]
 
@@ -202,6 +203,7 @@ model TaskExecution {
 
   // Relations
   task        ComplianceTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user        User           @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   @@index([taskId])
   @@map("task_executions")

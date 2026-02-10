@@ -13,6 +13,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { TaskService } from '../../../core/services/task.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { DialogService } from '../../../shared/services/dialog.service';
@@ -36,6 +38,8 @@ import { SkipTaskDialogComponent } from '../../../shared/components/skip-task-di
     MatDialogModule,
     MatTooltipModule,
     MatSnackBarModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
   ],
   templateUrl: './task-detail.component.html',
   styleUrls: ['./task-detail.component.css'],
@@ -44,11 +48,12 @@ export class TaskDetailComponent implements OnInit {
   task: ComplianceTask | null = null;
   loading = true;
   completeComment = '';
+  completedAt: Date = new Date();
   skipRemarks = '';
   selectedFiles: File[] = [];
 
   get canExecuteTask(): boolean {
-    return this.task?.status === 'PENDING' && this.authService.isTaskOwner();
+    return this.task?.status === 'PENDING' && (this.authService.isTaskOwner() || this.authService.isReviewer() || this.authService.isAdmin());
   }
 
   get canUploadEvidence(): boolean {
@@ -267,7 +272,7 @@ export class TaskDetailComponent implements OnInit {
   private completeTaskAfterUpload(): void {
     if (!this.task) return;
 
-    this.taskService.completeTask(this.task.id, { comment: this.completeComment }).subscribe({
+    this.taskService.completeTask(this.task.id, { comment: this.completeComment, completedAt: this.completedAt.toISOString() }).subscribe({
       next: (response) => {
         if (response.success) {
           this.snackBar.open('Task completed successfully!', 'Close', {
