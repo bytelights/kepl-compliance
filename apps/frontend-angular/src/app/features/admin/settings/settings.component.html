@@ -116,6 +116,11 @@
                       <mat-icon *ngIf="!teamsTesting">send</mat-icon>
                       Send Test Message
                     </button>
+                    <button mat-stroked-button color="accent" type="button" (click)="sendTestReport()" [disabled]="teamsSendingTestReport || !teamsConfig.webhookUrl">
+                      <mat-spinner diameter="18" *ngIf="teamsSendingTestReport"></mat-spinner>
+                      <mat-icon *ngIf="!teamsSendingTestReport">preview</mat-icon>
+                      {{ teamsSendingTestReport ? 'Sending...' : 'Send Test Report' }}
+                    </button>
                   </div>
                 </form>
               </div>

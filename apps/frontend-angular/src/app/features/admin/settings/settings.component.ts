@@ -60,6 +60,7 @@ export class SettingsComponent implements OnInit {
   };
   teamsTesting = false;
   teamsSaving = false;
+  teamsSendingTestReport = false;
 
   // System Health
   systemHealth: SystemHealth | null = null;
@@ -172,6 +173,25 @@ export class SettingsComponent implements OnInit {
       error: (err) => {
         this.teamsTesting = false;
         this.snackBar.open('Failed to send test message: ' + (err.error?.message || 'Unknown error'), 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
+      },
+    });
+  }
+
+  sendTestReport(): void {
+    this.teamsSendingTestReport = true;
+    const webhookUrl = this.teamsConfig.webhookUrl;
+    this.http.post<any>(`${environment.apiUrl}/reports/teams/test-report`, { webhookUrl }).subscribe({
+      next: (response) => {
+        this.teamsSendingTestReport = false;
+        if (response.success) {
+          this.snackBar.open('Test report sent! Check your Teams channel.', 'Close', { duration: 5000 });
+        } else {
+          this.snackBar.open('Failed: ' + response.message, 'Close', { duration: 5000 });
+        }
+      },
+      error: (err) => {
+        this.teamsSendingTestReport = false;
+        this.snackBar.open('Failed to send test report: ' + (err.error?.message || 'Unknown error'), 'Close', { duration: 5000 });
       },
     });
   }

@@ -1,55 +1,41 @@
 import { Injectable } from '@nestjs/common';
 
-export interface AdaptiveCardSection {
-  type: string;
-  text?: string;
-  size?: string;
-  weight?: string;
-}
-
-export interface AdaptiveCard {
-  type: string;
-  version: string;
-  body: any[];
-}
-
 @Injectable()
 export class TeamsService {
-  async sendMessage(webhookUrl: string, message: string): Promise<void> {
-    const payload = {
-      type: 'message',
-      text: message,
-    };
-
-    await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-  }
-
-  async sendAdaptiveCard(
-    webhookUrl: string,
-    card: AdaptiveCard,
-  ): Promise<void> {
-    const payload = {
+  private buildAdaptiveCardPayload(body: any[]) {
+    return {
       type: 'message',
       attachments: [
         {
           contentType: 'application/vnd.microsoft.card.adaptive',
-          content: card,
+          contentUrl: null,
+          content: {
+            $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+            type: 'AdaptiveCard',
+            version: '1.2',
+            msTeams: { width: 'Full' },
+            body,
+          },
         },
       ],
     };
+  }
 
-    await fetch(webhookUrl, {
+  private async postToWebhook(webhookUrl: string, payload: any): Promise<void> {
+    const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
+
+    const responseText = await response.text();
+    if (responseText.includes('HTTP error 429')) {
+      throw new Error('Rate limited by Teams. Please try again later.');
+    }
   }
 
-  createWeeklyReportCard(
+  async sendWeeklyReport(
+    webhookUrl: string,
     summary: {
       pending: number;
       dueNext7Days: number;
@@ -65,89 +51,139 @@ export class TeamsService {
       owner: string;
       reviewer: string;
     }>,
-  ): AdaptiveCard {
-    const card: AdaptiveCard = {
-      type: 'AdaptiveCard',
-      version: '1.4',
-      body: [
-        {
-          type: 'TextBlock',
-          text: '📊 Weekly Compliance Report',
-          size: 'large',
-          weight: 'bolder',
-        },
-        {
-          type: 'TextBlock',
-          text: new Date().toLocaleDateString(),
-          spacing: 'none',
-          isSubtle: true,
-        },
-        {
-          type: 'FactSet',
-          facts: [
-            { title: '⏳ Pending Tasks:', value: summary.pending.toString() },
-            {
-              title: '📅 Due Next 7 Days:',
-              value: summary.dueNext7Days.toString(),
-            },
-            { title: '🔴 Overdue Tasks:', value: summary.overdue.toString() },
-          ],
-        },
-      ],
-    };
+  ): Promise<void> {
+    const body: any[] = [
+      {
+        type: 'TextBlock',
+        text: 'Kelp Compliance - Weekly Report',
+        size: 'large',
+        weight: 'bolder',
+        color: 'accent',
+      },
+      {
+        type: 'TextBlock',
+        text: new Date().toLocaleDateString('en-IN', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        }),
+        spacing: 'none',
+        isSubtle: true,
+      },
+      {
+        type: 'ColumnSet',
+        separator: true,
+        spacing: 'medium',
+        columns: [
+          {
+            type: 'Column',
+            width: 'stretch',
+            items: [
+              { type: 'TextBlock', text: 'Pending', size: 'small', isSubtle: true, horizontalAlignment: 'center' },
+              { type: 'TextBlock', text: String(summary.pending), size: 'extraLarge', weight: 'bolder', color: 'warning', horizontalAlignment: 'center' },
+            ],
+          },
+          {
+            type: 'Column',
+            width: 'stretch',
+            items: [
+              { type: 'TextBlock', text: 'Due (7 days)', size: 'small', isSubtle: true, horizontalAlignment: 'center' },
+              { type: 'TextBlock', text: String(summary.dueNext7Days), size: 'extraLarge', weight: 'bolder', color: 'accent', horizontalAlignment: 'center' },
+            ],
+          },
+          {
+            type: 'Column',
+            width: 'stretch',
+            items: [
+              { type: 'TextBlock', text: 'Overdue', size: 'small', isSubtle: true, horizontalAlignment: 'center' },
+              { type: 'TextBlock', text: String(summary.overdue), size: 'extraLarge', weight: 'bolder', color: 'attention', horizontalAlignment: 'center' },
+            ],
+          },
+        ],
+      },
+    ];
 
     if (tasks.length > 0) {
-      card.body.push({
+      body.push({
         type: 'TextBlock',
-        text: '📋 Task Details',
+        text: 'Task Details',
         weight: 'bolder',
-        spacing: 'medium',
+        spacing: 'large',
+        separator: true,
       });
 
+      // Table header
+      body.push({
+        type: 'ColumnSet',
+        spacing: 'small',
+        columns: [
+          { type: 'Column', width: 3, items: [{ type: 'TextBlock', text: 'Task', weight: 'bolder', size: 'small' }] },
+          { type: 'Column', width: 2, items: [{ type: 'TextBlock', text: 'Entity', weight: 'bolder', size: 'small' }] },
+          { type: 'Column', width: 2, items: [{ type: 'TextBlock', text: 'Due Date', weight: 'bolder', size: 'small' }] },
+          { type: 'Column', width: 2, items: [{ type: 'TextBlock', text: 'Owner', weight: 'bolder', size: 'small' }] },
+          { type: 'Column', width: 1, items: [{ type: 'TextBlock', text: 'Impact', weight: 'bolder', size: 'small' }] },
+        ],
+      });
+
+      // Table rows (max 10)
       tasks.slice(0, 10).forEach((task) => {
-        card.body.push({
-          type: 'Container',
+        body.push({
+          type: 'ColumnSet',
+          spacing: 'none',
           separator: true,
-          items: [
-            {
-              type: 'TextBlock',
-              text: `**${task.complianceId}** - ${task.title}`,
-              wrap: true,
-            },
-            {
-              type: 'FactSet',
-              facts: [
-                { title: 'Entity:', value: task.entity },
-                { title: 'Due Date:', value: task.dueDate },
-                { title: 'Status:', value: task.status },
-                { title: 'Impact:', value: task.impact },
-                { title: 'Owner:', value: task.owner },
-              ],
-            },
+          columns: [
+            { type: 'Column', width: 3, items: [{ type: 'TextBlock', text: `**${task.complianceId}** - ${task.title}`, size: 'small', wrap: true }] },
+            { type: 'Column', width: 2, items: [{ type: 'TextBlock', text: task.entity, size: 'small', wrap: true }] },
+            { type: 'Column', width: 2, items: [{ type: 'TextBlock', text: task.dueDate, size: 'small', color: 'attention', wrap: true }] },
+            { type: 'Column', width: 2, items: [{ type: 'TextBlock', text: task.owner, size: 'small', wrap: true }] },
+            { type: 'Column', width: 1, items: [{ type: 'TextBlock', text: task.impact, size: 'small', wrap: true }] },
           ],
         });
       });
 
       if (tasks.length > 10) {
-        card.body.push({
+        body.push({
           type: 'TextBlock',
           text: `...and ${tasks.length - 10} more tasks`,
           isSubtle: true,
+          spacing: 'small',
         });
       }
     }
 
-    return card;
+    const payload = this.buildAdaptiveCardPayload(body);
+    await this.postToWebhook(webhookUrl, payload);
   }
 
   async testConnection(
     webhookUrl: string,
   ): Promise<{ success: boolean; message: string }> {
     try {
-      await this.sendMessage(
-        webhookUrl,
-        '✅ Teams webhook connection test successful!',
-      );
+      const body = [
+        {
+          type: 'TextBlock',
+          text: 'Kelp Compliance',
+          size: 'large',
+          weight: 'bolder',
+          color: 'accent',
+        },
+        {
+          type: 'TextBlock',
+          text: 'Webhook connection test successful!',
+          spacing: 'small',
+        },
+        {
+          type: 'FactSet',
+          facts: [
+            { title: 'Status', value: 'Connected' },
+            { title: 'Tested at', value: new Date().toLocaleString('en-IN') },
+          ],
+        },
+      ];
+
+      const payload = this.buildAdaptiveCardPayload(body);
+      await this.postToWebhook(webhookUrl, payload);
       return { success: true, message: 'Test message sent successfully' };
     } catch (error: any) {
       return {

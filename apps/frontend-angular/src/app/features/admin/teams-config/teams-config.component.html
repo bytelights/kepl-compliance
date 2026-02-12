@@ -66,6 +66,17 @@
 
             <button
               mat-button
+              color="accent"
+              (click)="sendTestReport()"
+              [disabled]="sendingTestReport || configForm.invalid"
+            >
+              <mat-icon>preview</mat-icon>
+              <span *ngIf="!sendingTestReport">Send Test Report</span>
+              <span *ngIf="sendingTestReport">Sending...</span>
+            </button>
+
+            <button
+              mat-button
               (click)="triggerWeeklyReport()"
               [disabled]="configForm.invalid"
             >

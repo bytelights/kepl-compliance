@@ -55,12 +55,7 @@ export class DashboardComponent implements OnInit {
 
   // Date Filter Form
   dateFilterForm: FormGroup;
-  financialYearOptions = [
-    { label: 'Current FY (2025-2026)', value: 'current' },
-    { label: 'Last FY (2024-2025)', value: 'last' },
-    { label: 'FY 2023-2024', value: '2023-24' },
-    { label: 'FY 2022-2023)', value: '2022-23' },
-  ];
+  financialYearOptions: { label: string; value: string }[] = [];
 
   // Chart configurations
   public doughnutChartType = 'doughnut' as const;
@@ -318,6 +313,29 @@ export class DashboardComponent implements OnInit {
       endDate: [null],
       financialYear: [''],
     });
+    this.financialYearOptions = this.generateFinancialYearOptions();
+  }
+
+  private generateFinancialYearOptions(): { label: string; value: string }[] {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1; // 1-12
+    // FY starts in April: if month >= 4, current FY starts this year, else last year
+    const currentFYStartYear = currentMonth >= 4 ? currentYear : currentYear - 1;
+
+    const options: { label: string; value: string }[] = [];
+    // Generate current FY + 4 previous FYs (5 total)
+    for (let i = 0; i < 5; i++) {
+      const startYear = currentFYStartYear - i;
+      const endYear = startYear + 1;
+      const label = i === 0
+        ? `Current FY (${startYear}-${endYear})`
+        : i === 1
+          ? `Last FY (${startYear}-${endYear})`
+          : `FY ${startYear}-${endYear}`;
+      options.push({ label, value: `${startYear}-${String(endYear).slice(2)}` });
+    }
+    return options;
   }
   ngOnInit(): void {
     this.authService.currentUser$.subscribe((user) => {
@@ -657,29 +675,18 @@ export class DashboardComponent implements OnInit {
 
   getFinancialYearDates(fyValue: string): { startDate: string; endDate: string } {
     // Financial year in India: April 1 to March 31
-    const currentYear = new Date().getFullYear();
-    const currentMonth = new Date().getMonth() + 1;
-
-    switch (fyValue) {
-      case 'current':
-        const currentFYStart = currentMonth >= 4 ? currentYear : currentYear - 1;
-        return {
-          startDate: `${currentFYStart}-04-01`,
-          endDate: `${currentFYStart + 1}-03-31`,
-        };
-      case 'last':
-        const lastFYStart = currentMonth >= 4 ? currentYear - 1 : currentYear - 2;
-        return {
-          startDate: `${lastFYStart}-04-01`,
-          endDate: `${lastFYStart + 1}-03-31`,
-        };
-      case '2023-24':
-        return { startDate: '2023-04-01', endDate: '2024-03-31' };
-      case '2022-23':
-        return { startDate: '2022-04-01', endDate: '2023-03-31' };
-      default:
-        return { startDate: '', endDate: '' };
+    // fyValue format: "2025-26"
+    if (!fyValue || !fyValue.includes('-')) {
+      return { startDate: '', endDate: '' };
     }
+    const startYear = parseInt(fyValue.split('-')[0], 10);
+    if (isNaN(startYear)) {
+      return { startDate: '', endDate: '' };
+    }
+    return {
+      startDate: `${startYear}-04-01`,
+      endDate: `${startYear + 1}-03-31`,
+    };
   }
 
   applyDateFilter() {

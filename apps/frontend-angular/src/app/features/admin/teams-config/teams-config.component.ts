@@ -39,6 +39,7 @@ export class TeamsConfigComponent implements OnInit {
   loading = true;
   saving = false;
   testing = false;
+  sendingTestReport = false;
 
   constructor(
     private fb: FormBuilder,
@@ -126,6 +127,28 @@ export class TeamsConfigComponent implements OnInit {
           duration: 5000,
         });
         this.testing = false;
+      },
+    });
+  }
+
+  sendTestReport() {
+    if (this.configForm.invalid) return;
+
+    this.sendingTestReport = true;
+    const webhookUrl = this.configForm.value.webhookUrl;
+
+    this.http.post<any>(`${environment.apiUrl}/reports/teams/test-report`, { webhookUrl }).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.snackBar.open('Test report sent! Check your Teams channel.', 'Close', { duration: 5000 });
+        } else {
+          this.snackBar.open('Failed: ' + response.message, 'Close', { duration: 5000 });
+        }
+        this.sendingTestReport = false;
+      },
+      error: (error) => {
+        this.snackBar.open('Failed to send test report: ' + error.message, 'Close', { duration: 5000 });
+        this.sendingTestReport = false;
       },
     });
   }

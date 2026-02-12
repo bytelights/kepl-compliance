@@ -103,14 +103,12 @@ export class ReportsService {
         reviewer: task.reviewer.name,
       }));
 
-      // Create Adaptive Card
-      const card = this.teamsService.createWeeklyReportCard(
+      // Send to Teams
+      await this.teamsService.sendWeeklyReport(
+        webhookUrl,
         { pending, dueNext7Days, overdue },
         taskData,
       );
-
-      // Send to Teams
-      await this.teamsService.sendAdaptiveCard(webhookUrl, card);
 
       // Log successful report
       await this.prisma.reportRun.create({

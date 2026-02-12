@@ -21,7 +21,7 @@ export class ReportsController {
    * Admin/Reviewer only
    */
   @Post('weekly/trigger')
-  @Roles('ADMIN', 'REVIEWER')
+  @Roles('admin', 'reviewer')
   async triggerWeeklyReport() {
     await this.reportsService.sendReportNow();
     return {
@@ -35,10 +35,34 @@ export class ReportsController {
    * Admin only
    */
   @Post('teams/test')
-  @Roles('ADMIN')
+  @Roles('admin')
   async testTeamsWebhook(@Body() body: { webhookUrl: string }) {
     const result = await this.teamsService.testConnection(body.webhookUrl);
     return result;
+  }
+
+  /**
+   * Send test report with sample data to preview format
+   * Admin only
+   */
+  @Post('teams/test-report')
+  @Roles('admin')
+  async testTeamsReport(@Body() body: { webhookUrl: string }) {
+    const sampleSummary = { pending: 12, dueNext7Days: 5, overdue: 3 };
+    const sampleTasks = [
+      { complianceId: 'COMP-001', title: 'Annual GST Return Filing', entity: 'ABC Pvt Ltd', dueDate: '15 Feb 2026', status: 'PENDING', impact: 'HIGH', owner: 'Rahul Mehta', reviewer: 'Priya Sharma' },
+      { complianceId: 'COMP-002', title: 'TDS Quarterly Return', entity: 'XYZ Corp', dueDate: '10 Feb 2026', status: 'PENDING', impact: 'CRITICAL', owner: 'Ankit Verma', reviewer: 'Priya Sharma' },
+      { complianceId: 'COMP-003', title: 'FEMA Compliance Report', entity: 'ABC Pvt Ltd', dueDate: '20 Feb 2026', status: 'PENDING', impact: 'MEDIUM', owner: 'Sneha Patil', reviewer: 'Vikram Singh' },
+      { complianceId: 'COMP-004', title: 'ROC Annual Filing', entity: 'DEF Industries', dueDate: '28 Feb 2026', status: 'PENDING', impact: 'HIGH', owner: 'Rahul Mehta', reviewer: 'Vikram Singh' },
+      { complianceId: 'COMP-005', title: 'PF Monthly Return', entity: 'XYZ Corp', dueDate: '12 Feb 2026', status: 'PENDING', impact: 'LOW', owner: 'Ankit Verma', reviewer: 'Priya Sharma' },
+    ];
+
+    try {
+      await this.teamsService.sendWeeklyReport(body.webhookUrl, sampleSummary, sampleTasks);
+      return { success: true, message: 'Test report sent successfully' };
+    } catch (error: any) {
+      return { success: false, message: `Failed to send test report: ${error.message}` };
+    }
   }
 
   /**
@@ -46,7 +70,7 @@ export class ReportsController {
    * Admin/Reviewer only
    */
   @Get('history')
-  @Roles('ADMIN', 'REVIEWER')
+  @Roles('admin', 'reviewer')
   async getReportHistory() {
     // This would query the reportRun table
     return {
@@ -60,7 +84,7 @@ export class ReportsController {
    * Admin/Reviewer only
    */
   @Get('export/compliance-summary')
-  @Roles('ADMIN', 'REVIEWER')
+  @Roles('admin', 'reviewer')
   async exportComplianceSummary(
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
@@ -85,7 +109,7 @@ export class ReportsController {
    * Admin/Reviewer only
    */
   @Get('export/department-report')
-  @Roles('ADMIN', 'REVIEWER')
+  @Roles('admin', 'reviewer')
   async exportDepartmentReport(@Res() res: Response = undefined as any) {
     const data = await this.exportService.generateDepartmentReport();
     const csv = this.exportService.convertToCSV(data);
@@ -103,7 +127,7 @@ export class ReportsController {
    * Admin/Reviewer only
    */
   @Get('export/overdue-tasks')
-  @Roles('ADMIN', 'REVIEWER')
+  @Roles('admin', 'reviewer')
   async exportOverdueTasks(@Res() res: Response = undefined as any) {
     const data = await this.exportService.generateOverdueReport();
     const csv = this.exportService.convertToCSV(data);
