@@ -20,7 +20,7 @@ export class TasksService {
     userRole: string,
     userId: string,
   ) {
-    const { page = 1, limit = 50, search, ...filters } = query;
+    const { page = 1, limit = 25, search, ...filters } = query;
     const skip = (page - 1) * limit;
 
     const where: any = {
@@ -92,7 +92,6 @@ export class TasksService {
           complianceMaster: { select: { id: true, name: true, complianceId: true } },
           owner: { select: { id: true, name: true, email: true } },
           reviewer: { select: { id: true, name: true, email: true } },
-          _count: { select: { evidenceFiles: true } },
         },
         orderBy: { dueDate: 'asc' },
       }),
@@ -103,7 +102,7 @@ export class TasksService {
     const today = new Date();
     const tasksWithOverdue = tasks.map((task) => ({
       ...task,
-      evidenceCount: task._count.evidenceFiles,
+
       isOverdue:
         task.dueDate && task.dueDate < today && task.status === 'PENDING',
     }));
