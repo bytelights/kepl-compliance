@@ -88,18 +88,27 @@ export class AuthService {
       const name = account.name || email;
       const msOid = account.homeAccountId;
 
-      // Only allow users that already exist in the database
-      const user = await this.usersService.findByEmail(email);
+      // Find or create user
+      let user = await this.usersService.findByEmail(email);
 
       if (!user) {
+        // New user — create with isActive: false, needs admin approval
+        user = await this.usersService.create({
+          email,
+          name,
+          msOid,
+          role: 'task_owner',
+          isActive: false,
+        });
+
         throw new UnauthorizedException(
-          'Access denied. Your account is not registered in the system. Please contact your administrator.',
+          'Your account has been created and is pending approval. Please contact your administrator to activate your account.',
         );
       }
 
       if (!user.isActive) {
         throw new UnauthorizedException(
-          'Your account has been deactivated. Please contact your administrator.',
+          'Your account is pending approval. Please contact your administrator to activate your account.',
         );
       }
 

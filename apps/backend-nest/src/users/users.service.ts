@@ -60,7 +60,7 @@ export class UsersService {
         name: data.name,
         role: data.role || 'task_owner',
         msOid: data.msOid,
-        isActive: true,
+        isActive: data.isActive ?? true,
       },
     });
   }
