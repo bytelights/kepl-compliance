@@ -88,25 +88,27 @@ export class AuthService {
       const name = account.name || email;
       const msOid = account.homeAccountId;
 
-      // Get or create user
-      let user = await this.usersService.findByEmail(email);
+      // Only allow users that already exist in the database
+      const user = await this.usersService.findByEmail(email);
 
       if (!user) {
-        // Create new user with default role
-        user = await this.usersService.create({
-          email,
-          name,
-          msOid,
-          role: 'task_owner', // Default role
-        });
-      } else {
-        // Update existing user
-        user = await this.usersService.update(user.id, {
-          msOid,
-          name,
-          lastLoginAt: new Date(),
-        });
+        throw new UnauthorizedException(
+          'Access denied. Your account is not registered in the system. Please contact your administrator.',
+        );
       }
+
+      if (!user.isActive) {
+        throw new UnauthorizedException(
+          'Your account has been deactivated. Please contact your administrator.',
+        );
+      }
+
+      // Update user details on login
+      await this.usersService.update(user.id, {
+        msOid,
+        name,
+        lastLoginAt: new Date(),
+      });
 
       // Generate JWT
       const payload: JwtPayload = {

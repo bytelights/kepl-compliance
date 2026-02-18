@@ -64,10 +64,13 @@ export class AuthController {
       // Redirect to frontend
       const frontendUrl = this.configService.get<string>('FRONTEND_URL');
       res.redirect(`${frontendUrl}/dashboard`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Callback error:', error);
       const frontendUrl = this.configService.get<string>('FRONTEND_URL');
-      res.redirect(`${frontendUrl}/login?error=auth_failed`);
+      const errorMsg = error instanceof UnauthorizedException
+        ? encodeURIComponent(error.message)
+        : 'auth_failed';
+      res.redirect(`${frontendUrl}/login?error=${errorMsg}`);
     }
   }
 

@@ -8,6 +8,9 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
+  // Trust proxy (nginx) so secure cookies work behind reverse proxy
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+
   // Enable CORS
   app.enableCors({
     origin: configService.get<string>('FRONTEND_URL', 'http://localhost:4200'),
